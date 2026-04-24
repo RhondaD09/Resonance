@@ -11,9 +11,10 @@ struct WellnessView: View {
     @Bindable var state: AppState
     var onChangeMood: (() -> Void)? = nil
 
-    @State private var completionCount              = 0
-    @State private var showCompletionPopup          = false
-    @State private var navigateToMusicViewOnDismiss = false
+    @State private var completionCount                = 0
+    @State private var showCompletionPopup            = false
+    @State private var navigateToMusicViewOnDismiss   = false
+    @State private var navigateToConnectViewOnDismiss = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -49,7 +50,10 @@ struct WellnessView: View {
         }
         .sensoryFeedback(.success, trigger: completionCount)
         .fullScreenCover(isPresented: $showCompletionPopup, onDismiss: {
-            if navigateToMusicViewOnDismiss {
+            if navigateToConnectViewOnDismiss {
+                navigateToConnectViewOnDismiss = false
+                state.selectedTab = .connect
+            } else if navigateToMusicViewOnDismiss {
                 navigateToMusicViewOnDismiss = false
                 state.selectedTab = .music
             }
@@ -61,6 +65,10 @@ struct WellnessView: View {
                 },
                 onNeedMorePeace: {
                     showCompletionPopup = false
+                },
+                onNavigateToConnect: {
+                    navigateToConnectViewOnDismiss = true
+                    dismissCompletion()
                 }
             )
         }

@@ -350,7 +350,7 @@ struct CosmicBreathingView: View {
 
 // Stars Background
 
-private struct StarsBackground: View {
+struct StarsBackground: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
@@ -377,7 +377,7 @@ private struct StarsBackground: View {
         }
     }
 
-    private func frac(_ x: Double) -> Double {
+    func frac(_ x: Double) -> Double {
         x - floor(x)
     }
 }

@@ -413,7 +413,8 @@ private struct MoodCarousel: View {
                     let size = distance < 0.5 ? selectedSize : deselectedSize
                     let isCenter = index == selectedIndex
 
-                    VStack(spacing: 10) {
+//Adjust the wording under the Mood Faces
+                    VStack(spacing: 28) {
                         MoodFaceView(mood: mood, isSelected: isCenter, size: size)
 
                         if isCenter {
@@ -536,6 +537,9 @@ struct MoodSelectionView: View {
                 endPoint: .bottom
             )
             .ignoresSafeArea()
+
+            StarsBackground()
+                .ignoresSafeArea()
 
             ambientOrbs
                 .opacity(0.5)

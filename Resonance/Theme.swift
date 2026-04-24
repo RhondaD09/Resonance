@@ -123,7 +123,7 @@ struct ForumPost: Identifiable {
 enum Mood: String, CaseIterable {
     case joyful      = "Joyful"
     case peaceful    = "Peaceful"
-    case neutral     = "Neutral"
+    case neutral     = "Low Energy"
     case overwhelmed = "Overwhelmed"
     case frustrated  = "Frustrated"
     case heavy       = "Heavy"
@@ -225,12 +225,7 @@ class AppState {
         didSet { saveFriends() }
     }
 
-    private static let defaultFriends: [Friend] = [
-        Friend(name: "Alexus", avatar: "👩🏽", colorName: "rose"),
-        Friend(name: "Allante", avatar: "👨🏾", colorName: "gold"),
-        Friend(name: "Terri", avatar: "👩🏼", colorName: "green"),
-        Friend(name: "Tameara", avatar: "🧑🏻", colorName: "sky"),
-    ]
+    private static let defaultFriends: [Friend] = []
 
     let tracks: [Track] = [
         Track(title: "Gentle Drift", subtitle: "Soft piano · mood-matched · 4 min"),
@@ -256,7 +251,13 @@ class AppState {
             self.doneTasks = Set(rawValues.compactMap { WellnessTask(rawValue: $0) })
         }
 
-    // Load saved friends, or use defaults on first launch
+    // One-time migration: clear old placeholder friends
+        if !UserDefaults.standard.bool(forKey: "friendsPlaceholderCleared") {
+            UserDefaults.standard.removeObject(forKey: "friends")
+            UserDefaults.standard.set(true, forKey: "friendsPlaceholderCleared")
+        }
+
+    // Load saved friends, or start with empty list
         if let data = UserDefaults.standard.data(forKey: "friends"),
            let saved = try? JSONDecoder().decode([Friend].self, from: data) {
             self.friends = saved

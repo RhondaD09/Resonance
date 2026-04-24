@@ -299,6 +299,9 @@ struct ConnectView: View {
     @ViewBuilder
     private func friendRow(index: Int) -> some View {
         let friend = state.friends[index]
+        let borderColor: Color = friend.overdue ? Color.rRose.opacity(0.25) : cardBorder.opacity(0.15)
+        let fillColor: Color = cardBg.opacity(0.6)
+        let shadowColor: Color = cardShadow.opacity(0.5)
 
         HStack(spacing: 14) {
             // Avatar circle with emoji — tappable to edit
@@ -397,14 +400,29 @@ struct ConnectView: View {
         .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 22)
-                .fill(cardBg.opacity(0.6))
+                .fill(fillColor)
                 .overlay(
                     RoundedRectangle(cornerRadius: 22)
-                        .stroke(friend.overdue ? Color.rRose.opacity(0.25) : cardBorder.opacity(0.15), lineWidth: 1)
+                        .stroke(borderColor, lineWidth: 1)
                 )
         )
         .clipShape(RoundedRectangle(cornerRadius: 22))
-        .shadow(color: cardShadow.opacity(0.5), radius: 20, y: 10)
+        .shadow(color: shadowColor, radius: 20, y: 10)
+        .contextMenu {
+            Button {
+                editingFriendIndex = index
+                showingEditFriend = true
+            } label: {
+                Label("Edit Friend", systemImage: "pencil")
+            }
+            Button(role: .destructive) {
+                let _ = withAnimation {
+                    state.friends.remove(at: index)
+                }
+            } label: {
+                Label("Delete Friend", systemImage: "trash")
+            }
+        }
     }
 
     // Check-in Prompts
