@@ -27,7 +27,7 @@ struct BreathCompletionCheckIn: View {
     var body: some View {
         ZStack {
 
-            // ── Background: animated mesh gradient ──────────────────────
+            // ── Background: animated mesh gradient ──
             AnimatedMeshGradient()
                 .ignoresSafeArea()
 
@@ -39,7 +39,7 @@ struct BreathCompletionCheckIn: View {
 
                     Spacer()
 
-                    // ── Title ─────────────────────────────────────────
+                    // ── Title ───
                     VStack(spacing: 0) {
                         Text("How Are")
                             .font(.custom("Titan One", size: 42))
@@ -59,7 +59,7 @@ struct BreathCompletionCheckIn: View {
 
                     Spacer()
 
-                    // ── Buttons ───────────────────────────────────────
+                    // ── Buttons ───
                     VStack(spacing: 16) {
 
                         // Feeling Grounded

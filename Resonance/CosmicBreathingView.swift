@@ -134,8 +134,7 @@ struct CosmicBreathingView: View {
     @State private var cycleTrigger: Int = 0
     @State private var buttonTrigger: Int = 0
 
-    /// Maps breathScale to glow intensity. When not running, uses the
-    /// independent orbBreathing animation for a gentle idle pulse.
+    
     private var orbGlowIntensity: Double {
         if isRunning {
             let normalized = (breathScale - 0.85) / 0.30
@@ -243,8 +242,8 @@ struct CosmicBreathingView: View {
                     // Countdown over the orb
                     if isRunning {
                         Text("\(countdown)")
-                            .font(.system(.largeTitle, design: .rounded, weight: .ultraLight))
-                            .foregroundColor(.white.opacity(0.8))
+                            .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                            .foregroundColor(Color(red: 125/255, green: 10/255,  blue: 255/255))
                     }
                 }
 
@@ -333,7 +332,7 @@ struct CosmicBreathingView: View {
             if phase == .inhale {
                 cycleCount += 1
                 cycleTrigger += 1
-                if cycleCount >= 4 {
+                if cycleCount >= 5 {
                     isRunning = false
                     withAnimation(.easeOut(duration: 0.5)) {
                         breathScale = 1.0

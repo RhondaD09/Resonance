@@ -52,7 +52,9 @@ struct ContentView: View {
         screenContent
             .sensoryFeedback(.selection, trigger: state.selectedTab)
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                bottomNavBar
+                if state.selectedTab != .wellness {
+                    bottomNavBar
+                }
             }
 //            .background {
 //                AnimatedSpiralBackground()
