@@ -69,6 +69,10 @@ struct WellnessView: View {
                 onNavigateToConnect: {
                     navigateToConnectViewOnDismiss = true
                     dismissCompletion()
+                },
+                onNavigateToMusic: {
+                    navigateToMusicViewOnDismiss = true
+                    dismissCompletion()
                 }
             )
         }

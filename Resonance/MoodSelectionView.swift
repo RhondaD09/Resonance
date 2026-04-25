@@ -549,10 +549,10 @@ struct MoodSelectionView: View {
                 VStack(spacing: 0) {
                     VStack(spacing: 15) {
                         Text("What is Your")
-                            .font(.custom("Dove of Peace Personal Use", size: 28))
+                            .font(.custom("Georgia", size: 28))
                             .foregroundStyle(Color.rText)
                         Text("PEACE?")
-                            .font(.custom("Dove of Peace Personal Use", size: 28))
+                            .font(.custom("Georgia", size: 28))
                             .foregroundStyle(Color.rAccent)
                     }
                     .opacity(titleOpacity)
@@ -584,10 +584,10 @@ struct MoodSelectionView: View {
                 VStack(spacing: 0) {
                     VStack(spacing: 15) {
                         Text("What do you")
-                            .font(.custom("Dove of Peace Personal Use", size: 28))
+                            .font(.custom("Georgia", size: 50))
                             .foregroundStyle(Color.rText)
                         Text("want to feel?")
-                            .font(.custom("Dove of Peace Personal Use", size: 28))
+                            .font(.system(size: 50, weight: .bold, design: .rounded))
                             .foregroundStyle(Color.rAccent)
                     }
                     .padding(.top, 60)
@@ -682,10 +682,10 @@ struct PostBreathingCheckinView: View {
 
                 VStack(spacing: 12) {
                     Text("How are you")
-                        .font(.custom("Dove of Peace Personal Use", size: 28))
+                        .font(.custom("Georgia", size: 28))
                         .foregroundStyle(Color.rText)
                     Text("feeling now?")
-                        .font(.custom("Dove of Peace Personal Use", size: 28))
+                        .font(.custom("Georgia", size: 28))
                         .foregroundStyle(Color.rAccent)
                 }
                 .opacity(titleOpacity)

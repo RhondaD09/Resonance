@@ -130,6 +130,9 @@ struct CosmicBreathingView: View {
 
     @State private var timer = Timer.publish(every: 1/60, on: .main, in: .common).autoconnect()
     @State private var orbBreathing: Bool = false
+    @State private var phaseTrigger: Int = 0
+    @State private var cycleTrigger: Int = 0
+    @State private var buttonTrigger: Int = 0
 
     /// Maps breathScale to glow intensity. When not running, uses the
     /// independent orbBreathing animation for a gentle idle pulse.
@@ -147,14 +150,14 @@ struct CosmicBreathingView: View {
             Color(red: 5/255, green: 3/255, blue: 15/255)
                 .ignoresSafeArea()
 
-            StarsBackground()
+            StarsBackground(breathScale: breathScale)
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 Text(isRunning ? phase.label : "Start Breathing")
-                    .font(.system(size: 30, weight: .light))
+                    .font(.system(.title, design: .rounded, weight: .bold))
                     .tracking(1.5)
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(Color(red: 125/255, green: 10/255, blue: 255/255))
                     .padding(.top, 60)
 
                 Spacer()
@@ -162,7 +165,7 @@ struct CosmicBreathingView: View {
                 // Spiral + glowing orb
                 ZStack {
                     AnimatedSpiralBackground(breathScale: breathScale)
-                        .frame(width: 380, height: 380)
+                        .frame(width: 390, height: 390)
                         .clipShape(Circle())
 
                     // Wide ambient halo — big soft throb
@@ -240,7 +243,7 @@ struct CosmicBreathingView: View {
                     // Countdown over the orb
                     if isRunning {
                         Text("\(countdown)")
-                            .font(.system(size: 48, weight: .ultraLight))
+                            .font(.system(.largeTitle, design: .rounded, weight: .ultraLight))
                             .foregroundColor(.white.opacity(0.8))
                     }
                 }
@@ -251,9 +254,9 @@ struct CosmicBreathingView: View {
                     toggle()
                 }) {
                     Text(isRunning ? "Stop" : "Begin")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(.body, design: .rounded, weight: .medium))
                         .tracking(1)
-                        .foregroundColor(Color("NewPurple"))
+                        .foregroundColor(Color(red: 125/255, green: 120/255, blue: 255/255))
                         .padding(.horizontal, 32)
                         .padding(.vertical, 12)
                         .background(
@@ -261,14 +264,14 @@ struct CosmicBreathingView: View {
                                 .fill(Color.clear)
                                 .overlay(
                                     Capsule()
-                                        .stroke(Color("NewPurple"), lineWidth: 1.5)
+                                        .stroke(Color(red: 125/255, green: 10/255, blue: 255/255), lineWidth: 1.5)
                                 )
                         )
                 }
                 .padding(.bottom, 16)
 
                 Text("Cycle \(cycleCount)")
-                    .font(.system(size: 13, weight: .light))
+                    .font(.system(.footnote, design: .rounded, weight: .light))
                     .foregroundColor(.white.opacity(0.4))
                     .padding(.bottom, 40)
             }
@@ -279,12 +282,17 @@ struct CosmicBreathingView: View {
                 orbBreathing = true
             }
         }
+        .sensoryFeedback(.selection, trigger: phaseTrigger)
+        .sensoryFeedback(.impact(weight: .heavy), trigger: cycleTrigger)
+        .sensoryFeedback(.impact(weight: .light), trigger: buttonTrigger)
         .onReceive(timer) { _ in tick() }
+        .dynamicTypeSize(.xSmall ... .xxxLarge)
     }
 
     //Logic
 
     private func toggle() {
+        buttonTrigger += 1
         isRunning.toggle()
         progress = 0
         phase = .inhale
@@ -315,6 +323,7 @@ struct CosmicBreathingView: View {
             let next = (phase.rawValue + 1) % BreathPhase.allCases.count
             if let newPhase = BreathPhase(rawValue: next) {
                 phase = newPhase
+                phaseTrigger += 1
             }
 
             // Voice
@@ -323,6 +332,7 @@ struct CosmicBreathingView: View {
             // Count completed cycles
             if phase == .inhale {
                 cycleCount += 1
+                cycleTrigger += 1
                 if cycleCount >= 4 {
                     isRunning = false
                     withAnimation(.easeOut(duration: 0.5)) {
@@ -351,15 +361,24 @@ struct CosmicBreathingView: View {
 // Stars Background
 
 struct StarsBackground: View {
+    var breathScale: CGFloat = 1.0
+
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { timeline in
             let time = timeline.date.timeIntervalSinceReferenceDate
             Canvas { ctx, size in
+                let centerX = size.width / 2
+                let centerY = size.height / 2
                 let starCount = 120
                 for i in 0..<starCount {
                     let seed = Double(i)
-                    let x = CGFloat(frac(sin(seed * 127.1 + 311.7) * 43758.5453)) * size.width
-                    let y = CGFloat(frac(sin(seed * 269.5 + 183.3) * 43758.5453)) * size.height
+                    let baseX = CGFloat(frac(sin(seed * 127.1 + 311.7) * 43758.5453)) * size.width
+                    let baseY = CGFloat(frac(sin(seed * 269.5 + 183.3) * 43758.5453)) * size.height
+
+                    let dx = baseX - centerX
+                    let dy = baseY - centerY
+                    let x = centerX + dx * breathScale
+                    let y = centerY + dy * breathScale
 
                     let brightness = frac(sin(seed * 419.2 + 73.1) * 43758.5453)
                     let twinkleSpeed = 0.4 + brightness * 2.5

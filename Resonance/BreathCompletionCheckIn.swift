@@ -19,6 +19,7 @@ struct BreathCompletionCheckIn: View {
     var onFeelingGrounded: () -> Void
     var onNeedMorePeace:   () -> Void
     var onNavigateToConnect: (() -> Void)?
+    var onNavigateToMusic: (() -> Void)?
 
     @State private var appeared         = false
     @State private var showPeacePrompts = false
@@ -31,7 +32,7 @@ struct BreathCompletionCheckIn: View {
                 .ignoresSafeArea()
 
             if showPeacePrompts {
-                PeacePromptsView(onDismiss: onFeelingGrounded, onNavigateToConnect: onNavigateToConnect)
+                PeacePromptsView(onDismiss: onFeelingGrounded, onNavigateToConnect: onNavigateToConnect, onNavigateToMusic: onNavigateToMusic)
                     .transition(.move(edge: .trailing))
             } else {
                 VStack(spacing: 0) {

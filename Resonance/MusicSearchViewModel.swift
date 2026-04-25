@@ -43,7 +43,7 @@ final class MusicSearchViewModel {
         statusText = "Searching for \"\(query)\"..."
         do {
             var request = MusicCatalogSearchRequest(term: query, types: [Song.self])
-            request.limit = 25
+            request.limit = 10
             let response = try await request.response()
             let results = Array(response.songs)
 

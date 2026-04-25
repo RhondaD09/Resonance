@@ -4,9 +4,9 @@
 <dict>
 	<key>UIAppFonts</key>
 	<array>
-		<string>dove_of_peace/Dove of Peace Personal Use.ttf</string>
-		<string>dove_of_peace/Dove of Peace two Personal Use.ttf</string>
-		<string>we_love_peace/We Love Peace.ttf</string>
+		<string>Dove of Peace Personal Use.ttf</string>
+		<string>Dove of Peace two Personal Use.ttf</string>
+		<string>We Love Peace.ttf</string>
 	</array>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>A Piece of Peace uses speech recognition so you can speak your reflections instead of typing.</string>

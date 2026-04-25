@@ -342,7 +342,7 @@ struct LandingView: View {
                 ArcTextView(
                     text: "A Piece of Peace",
                     radius: 140,
-                    font: .custom("Dove of Peace Personal Use", size: 40),
+                    font: .custom("Georgia", size: 40),
                     color: Color.rAccent
                 )
                 .opacity(titleOpacity)

@@ -116,6 +116,7 @@ struct JournalEntry: Codable, Identifiable {
 struct PeacePromptsView: View {
     var onDismiss: () -> Void
     var onNavigateToConnect: (() -> Void)?
+    var onNavigateToMusic: (() -> Void)?
 
     @State private var appeared = false
     @State private var randomPrompt: String = ""
@@ -141,6 +142,10 @@ struct PeacePromptsView: View {
     private var isFriendPrompt: Bool {
         randomPrompt == "TEXT A FRIEND THAT MAKES YOU SMILE" ||
         randomPrompt == "CALL A FRIEND YOU'VE MISSED"
+    }
+
+    private var isDancePrompt: Bool {
+        randomPrompt == "DANCE BREAK!"
     }
 
     // Colors matching the reference design
@@ -207,16 +212,21 @@ struct PeacePromptsView: View {
                 promptCard
                     .opacity(appeared ? 1 : 0)
                     .scaleEffect(appeared ? 1 : 0.9)
+                    .contentShape(Rectangle())
                     .onTapGesture {
                         if isFriendPrompt, let navigate = onNavigateToConnect {
                             navigate()
+                        } else if isDancePrompt, let navigate = onNavigateToMusic {
+                            navigate()
+                        } else {
+                            onDismiss()
                         }
                     }
 
                 Spacer()
 
                 // Tap to dismiss hint
-                Text(isFriendPrompt ? "Tap the card to connect with a friend" : "Tap anywhere to continue")
+                Text(isFriendPrompt ? "Tap the card to connect with a friend" : isDancePrompt ? "Tap the card to find your beat" : "Tap anywhere to continue")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(lightPurple.opacity(0.4))
                     .padding(.bottom, 50)
@@ -230,6 +240,7 @@ struct PeacePromptsView: View {
                 appeared = true
             }
         }
+        .contentShape(Rectangle())
         .onTapGesture {
             onDismiss()
         }
@@ -247,7 +258,7 @@ struct PeacePromptsView: View {
                             .textCase(.uppercase)
                         
                         Text(randomPrompt)
-                            .font(.custom("Dove of Peace Personal Use", size: 22))
+                            .font(.custom("We Love Peace", size: 22))
                             .tracking(0.5)
                             .foregroundStyle(.white.opacity(0.95))
                             .multilineTextAlignment(.center)

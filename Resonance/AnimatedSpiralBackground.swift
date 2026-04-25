@@ -8,14 +8,13 @@
 import SwiftUI
 
 struct AnimatedSpiralBackground: View {
-    @State private var breathing: Bool = false
     var breathScale: CGFloat = 1.0
 
-    // NewPurple palette — from dark to bright
-    private static let purpleDark   = Color(red: 25/255, green: 10/255, blue: 55/255)
-    private static let purpleMid    = Color(red: 55/255, green: 25/255, blue: 110/255)
-    private static let purpleBright = Color(red: 100/255, green: 60/255, blue: 190/255)
-    private static let purpleGlow   = Color(red: 155/255, green: 120/255, blue: 255/255)
+    // NewPurple palette
+    private static let baseDark   = Color(red: 20/255, green: 8/255, blue: 45/255)
+    private static let baseMid    = Color(red: 45/255, green: 20/255, blue: 80/255)
+    private static let highlight  = Color(red: 120/255, green: 80/255, blue: 200/255)
+    private static let bright     = Color(red: 170/255, green: 140/255, blue: 255/255)
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
@@ -23,22 +22,19 @@ struct AnimatedSpiralBackground: View {
             Canvas { context, size in
                 let cx = size.width / 2
                 let cy = size.height / 2
-                let maxR = max(size.width, size.height) * 0.48 * breathScale
+                let maxR = min(size.width, size.height) * 0.48 * breathScale
 
-                // Deep space background
+                // Background fill
                 context.fill(
                     Path(CGRect(origin: .zero, size: size)),
                     with: .color(Color(red: 5/255, green: 3/255, blue: 15/255))
                 )
 
-                // Distant stars
-                drawStars(context: context, size: size, time: time)
-
-                // Soft purple nebula glow behind spiral
-                let nebulaR = maxR * 0.9
+                // Ambient nebula glow
+                let nebulaR = maxR * 1.3
                 let nebulaGrad = Gradient(colors: [
-                    Self.purpleMid.opacity(0.18),
-                    Self.purpleDark.opacity(0.08),
+                    Self.baseMid.opacity(0.25),
+                    Self.baseDark.opacity(0.10),
                     Color.clear
                 ])
                 context.fill(
@@ -48,188 +44,132 @@ struct AnimatedSpiralBackground: View {
                                           startRadius: 0, endRadius: nebulaR)
                 )
 
-                // Draw 10 spiral arms — each curves clearly from center to edge
-                drawGalaxySpiralArms(context: context, cx: cx, cy: cy, maxR: maxR, time: time)
+                // Concentric vortex rings
+                drawVortexRings(context: context, cx: cx, cy: cy, maxR: maxR, time: time)
 
-                // Scattered particles along the arms
-                drawSpiralParticles(context: context, cx: cx, cy: cy, maxR: maxR, time: time)
-
-                // Center glow
-                drawCenterGlow(context: context, cx: cx, cy: cy, maxR: maxR, time: time)
+                // Pulsating center orb
+                drawCenterOrb(context: context, cx: cx, cy: cy, time: time)
             }
         }
         .ignoresSafeArea()
     }
 
-    // MARK: - Galaxy Spiral Arms (10 clean arms, ~2 turns each)
+    // MARK: - Vortex Rings
 
-    private func drawGalaxySpiralArms(context: GraphicsContext, cx: CGFloat, cy: CGFloat, maxR: CGFloat, time: Double) {
-        let armCount = 10
-        let winds = 2.0 // each arm makes 2 full turns — clearly spiral, not rings
-        let steps = 300
-        let rotOffset = time * 0.05 // slow rotation
+    private func drawVortexRings(context: GraphicsContext, cx: CGFloat, cy: CGFloat, maxR: CGFloat, time: Double) {
+        let ringCount = 45
+        let rotSpeed = time * 0.15
+        let pointsPerRing = 90
 
-        for arm in 0..<armCount {
-            let armAngle = Double(arm) * .pi * 2.0 / Double(armCount)
+        for i in 0..<ringCount {
+            let t = Double(i) / Double(ringCount)
+            let baseRadius = 18 + t * Double(maxR - 18)
 
-            // Each arm has slightly different brightness
-            let armBrightness = 0.5 + 0.5 * sin(Double(arm) * 1.3 + 0.5)
+            // Brightness shimmer
+            let wave1 = sin(t * .pi * 8.0 - time * 1.2)
+            let wave2 = sin(t * .pi * 5.0 + time * 0.8) * 0.5
+            let brightness = 0.15 + 0.85 * max(0, (wave1 + wave2) / 1.5)
+
+            let edgeFade = min(t * 4.0, 1.0) * min((1.0 - t) * 3.0, 1.0)
+            let alpha = brightness * edgeFade
+            let lineWidth: CGFloat = CGFloat(1.5 + brightness * 3.0)
+
+            // Spiral twist: radius varies with angle, offset shifts per ring
+            let spiralStrength = 8.0 + t * 12.0
+            let spiralPhase = t * .pi * 3.0 + rotSpeed
 
             var path = Path()
-            var started = false
+            for p in 0...pointsPerRing {
+                let angle = Double(p) / Double(pointsPerRing) * .pi * 2.0
+                let spiralWarp = sin(angle * 2.0 + spiralPhase) * spiralStrength
+                let wobble = sin(angle * 3.0 + rotSpeed * 1.5 + t * 8.0) * 2.0
+                let r = CGFloat(baseRadius + spiralWarp + wobble)
 
-            for step in 0...steps {
-                let t = Double(step) / Double(steps)
-                let angle = t * .pi * 2.0 * winds + armAngle + rotOffset
+                let px = cx + r * CGFloat(cos(angle))
+                let py = cy + r * CGFloat(sin(angle))
 
-                // Logarithmic spiral: r grows exponentially for a natural galaxy look
-                let logR = (exp(t * 2.5) - 1.0) / (exp(2.5) - 1.0) * Double(maxR)
-
-                let x = Double(cx) + cos(angle) * logR
-                let y = Double(cy) + sin(angle) * logR
-
-                if !started {
-                    path.move(to: CGPoint(x: x, y: y))
-                    started = true
+                if p == 0 {
+                    path.move(to: CGPoint(x: px, y: py))
                 } else {
-                    path.addLine(to: CGPoint(x: x, y: y))
+                    path.addLine(to: CGPoint(x: px, y: py))
                 }
             }
+            path.closeSubpath()
 
-            // Outer glow pass — soft and wide
+            // Glow pass
             var glowCtx = context
-            glowCtx.addFilter(.blur(radius: 8))
-            glowCtx.stroke(
-                path,
-                with: .color(Self.purpleBright.opacity(0.2 * armBrightness)),
-                style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round)
-            )
+            glowCtx.addFilter(.blur(radius: 6))
+            glowCtx.stroke(path, with: .color(Self.highlight.opacity(alpha * 0.3)),
+                           style: StrokeStyle(lineWidth: lineWidth + 4, lineCap: .round, lineJoin: .round))
 
-            // Main arm stroke — thin and defined
-            let lineOpacity = 0.45 * armBrightness
-            context.stroke(
-                path,
-                with: .color(Self.purpleBright.opacity(lineOpacity)),
-                style: StrokeStyle(lineWidth: 1.8, lineCap: .round, lineJoin: .round)
-            )
+            // Main ring stroke
+            context.stroke(path, with: .color(Self.highlight.opacity(alpha * 0.6)),
+                           style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
 
-            // Bright highlight stroke — thinnest, brightest near center
-            let highlightGrad = Gradient(colors: [
-                Self.purpleGlow.opacity(0.6 * armBrightness),
-                Self.purpleGlow.opacity(0.3 * armBrightness),
-                Self.purpleBright.opacity(0.1 * armBrightness),
-                Color.clear
-            ])
-            context.stroke(
-                path,
-                with: .linearGradient(highlightGrad,
-                                       startPoint: CGPoint(x: cx, y: cy),
-                                       endPoint: CGPoint(x: cx + maxR * 0.7, y: cy)),
-                style: StrokeStyle(lineWidth: 0.8, lineCap: .round, lineJoin: .round)
-            )
+            // Bright highlight on strongest bands
+            if brightness > 0.6 {
+                let highlightAlpha = (brightness - 0.6) / 0.4 * edgeFade
+                context.stroke(path, with: .color(Self.bright.opacity(highlightAlpha * 0.4)),
+                               style: StrokeStyle(lineWidth: max(1, lineWidth - 1), lineCap: .round, lineJoin: .round))
+            }
         }
     }
 
-    // MARK: - Stars
+    // MARK: - Center Orb
 
-    private func drawStars(context: GraphicsContext, size: CGSize, time: Double) {
-        let starCount = 100
-        for i in 0..<starCount {
-            let seed = Double(i)
-            let x = CGFloat(frac(sin(seed * 127.1 + 311.7) * 43758.5453)) * size.width
-            let y = CGFloat(frac(sin(seed * 269.5 + 183.3) * 43758.5453)) * size.height
+    private func drawCenterOrb(context: GraphicsContext, cx: CGFloat, cy: CGFloat, time: Double) {
+        let pulse = 0.8 + 0.2 * sin(time * 1.2)
+        let slowPulse = 0.9 + 0.1 * sin(time * 0.6)
 
-            let brightness = frac(sin(seed * 419.2 + 73.1) * 43758.5453)
-            let twinkle = 0.3 + 0.7 * (0.5 + 0.5 * sin(time * (0.3 + brightness * 2.0) + seed * 2.1))
-            let starSize = CGFloat(0.5 + brightness * 1.5)
-            let alpha = twinkle * (0.2 + brightness * 0.5)
-
-            context.fill(
-                Path(ellipseIn: CGRect(x: x - starSize / 2, y: y - starSize / 2,
-                                       width: starSize, height: starSize)),
-                with: .color(Color.white.opacity(alpha))
-            )
-        }
-    }
-
-    // MARK: - Spiral Particles
-
-    private func drawSpiralParticles(context: GraphicsContext, cx: CGFloat, cy: CGFloat, maxR: CGFloat, time: Double) {
-        let count = 50
-        for i in 0..<count {
-            let seed = Double(i)
-            let baseFrac = frac(sin(seed * 337.1 + 51.7) * 43758.5453)
-
-            let t = frac(baseFrac + time * 0.02)
-            let armIdx = floor(baseFrac * 10)
-            let armAngle = armIdx * .pi * 2.0 / 10.0
-            let angle = t * .pi * 2.0 * 2.0 + armAngle + time * 0.05
-            let logR = (exp(t * 2.5) - 1.0) / (exp(2.5) - 1.0) * Double(maxR)
-
-            let scatter = sin(seed * 193.7 + time * 0.3) * 6.0
-            let px = cx + CGFloat(cos(angle) * logR + cos(angle + .pi / 2) * scatter)
-            let py = cy + CGFloat(sin(angle) * logR + sin(angle + .pi / 2) * scatter)
-
-            let fade = (1.0 - t) * min(t * 5.0, 1.0)
-            let twinkle = 0.5 + 0.5 * sin(time * (1.0 + baseFrac * 2.0) + seed * 3.7)
-            let alpha = fade * twinkle * 0.5
-
-            let dotR: CGFloat = CGFloat(1.0 + baseFrac * 2.0)
-            let haloR = dotR * 3.0
-            let haloGrad = Gradient(colors: [
-                Self.purpleGlow.opacity(alpha * 0.4),
-                Color.clear
-            ])
-            context.fill(
-                Path(ellipseIn: CGRect(x: px - haloR, y: py - haloR, width: haloR * 2, height: haloR * 2)),
-                with: .radialGradient(haloGrad, center: CGPoint(x: px, y: py),
-                                      startRadius: 0, endRadius: haloR)
-            )
-            context.fill(
-                Path(ellipseIn: CGRect(x: px - dotR, y: py - dotR, width: dotR * 2, height: dotR * 2)),
-                with: .color(Self.purpleGlow.opacity(alpha * 0.7))
-            )
-        }
-    }
-
-    // MARK: - Center Glow
-
-    private func drawCenterGlow(context: GraphicsContext, cx: CGFloat, cy: CGFloat, maxR: CGFloat, time: Double) {
-        let pulse = 0.85 + 0.15 * sin(time * 0.8)
-
-        // Soft purple core glow
-        let glowR: CGFloat = 30 * CGFloat(pulse)
-        let glowGrad = Gradient(colors: [
-            Self.purpleGlow.opacity(0.35 * pulse),
-            Self.purpleBright.opacity(0.12 * pulse),
+        // Wide soft halo
+        let haloR: CGFloat = 60 * CGFloat(slowPulse)
+        let haloGrad = Gradient(colors: [
+            Self.highlight.opacity(0.25 * pulse),
+            Self.baseMid.opacity(0.10 * pulse),
             Color.clear
         ])
         context.fill(
-            Path(ellipseIn: CGRect(x: cx - glowR, y: cy - glowR,
-                                   width: glowR * 2, height: glowR * 2)),
-            with: .radialGradient(glowGrad, center: CGPoint(x: cx, y: cy),
-                                  startRadius: 0, endRadius: glowR)
+            Path(ellipseIn: CGRect(x: cx - haloR, y: cy - haloR,
+                                    width: haloR * 2, height: haloR * 2)),
+            with: .radialGradient(haloGrad, center: CGPoint(x: cx, y: cy),
+                                  startRadius: 0, endRadius: haloR)
         )
 
-        // Bright white center dot
-        let coreR: CGFloat = 4
-        let whiteGrad = Gradient(colors: [
-            Color.white.opacity(0.6 * pulse),
-            Self.purpleGlow.opacity(0.25 * pulse),
+        // Mid glow
+        let midR: CGFloat = 30 * CGFloat(pulse)
+        let midGrad = Gradient(colors: [
+            Self.bright.opacity(0.5 * pulse),
+            Self.highlight.opacity(0.2 * pulse),
             Color.clear
         ])
         context.fill(
-            Path(ellipseIn: CGRect(x: cx - coreR * 3, y: cy - coreR * 3,
-                                   width: coreR * 6, height: coreR * 6)),
-            with: .radialGradient(whiteGrad, center: CGPoint(x: cx, y: cy),
-                                  startRadius: 0, endRadius: coreR * 3)
+            Path(ellipseIn: CGRect(x: cx - midR, y: cy - midR,
+                                    width: midR * 2, height: midR * 2)),
+            with: .radialGradient(midGrad, center: CGPoint(x: cx, y: cy),
+                                  startRadius: 0, endRadius: midR)
         )
-    }
 
-    // MARK: - Utility
+        // Bright core
+        let coreR: CGFloat = 12 * CGFloat(pulse)
+        let coreGrad = Gradient(colors: [
+            Color.white.opacity(0.7 * pulse),
+            Self.bright.opacity(0.4 * pulse),
+            Color.clear
+        ])
+        context.fill(
+            Path(ellipseIn: CGRect(x: cx - coreR, y: cy - coreR,
+                                    width: coreR * 2, height: coreR * 2)),
+            with: .radialGradient(coreGrad, center: CGPoint(x: cx, y: cy),
+                                  startRadius: 0, endRadius: coreR)
+        )
 
-    private func frac(_ x: Double) -> Double {
-        x - floor(x)
+        // White hot center point
+        let dotR: CGFloat = 4 * CGFloat(pulse)
+        context.fill(
+            Path(ellipseIn: CGRect(x: cx - dotR, y: cy - dotR,
+                                    width: dotR * 2, height: dotR * 2)),
+            with: .color(Color.white.opacity(0.85 * pulse))
+        )
     }
 }
 
