@@ -1,5 +1,10 @@
 //
 //  MeditationView.swift
+//  Resonance
+//
+//  Created by Rhonda Davis on 4/26/26
+
+
 //  A calming meditation visual: layered lotus with a glowing, breathing orb,
 //  slow rotation, shimmering petals, and a flowing aurora background.
 
@@ -10,12 +15,18 @@ import Combine
 // Root View
 
 struct MeditationView: View {
+    // ── Change this to set how many 4-7-8 cycles to run ──
+    private let totalCycles = 4
+
     @State private var phase: BreathPhase = .inhale
     @State private var progress: Double = 0
     @State private var countdown: Int = 4
     @State private var breathScale: CGFloat = 0.85
+    @State private var cycleCount: Int = 0
+    @State private var isRunning: Bool = true
     @State private var phaseTrigger: Int = 0
     @State private var tickTrigger: Int = 0
+    @State private var cycleTrigger: Int = 0
     @State private var timer = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -29,7 +40,7 @@ struct MeditationView: View {
                     AnimatedMeshGradient()
                         .ignoresSafeArea()
 
-                    LotusFlower(t: t, breathScale: breathScale)
+                    LotusFlower(t: t, breathScale: breathScale, phase: phase)
                         .frame(width: s * 0.85, height: s * 0.85)
 
                     GlowingOrb(t: t, breathScale: breathScale, phase: phase, countdown: countdown)
@@ -40,10 +51,13 @@ struct MeditationView: View {
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: phaseTrigger)
         .sensoryFeedback(.impact(weight: .light), trigger: tickTrigger)
+        .sensoryFeedback(.impact(weight: .heavy), trigger: cycleTrigger)
         .onReceive(timer) { _ in tick() }
     }
 
     private func tick() {
+        guard isRunning else { return }
+
         let dt = 1.0 / 60.0
         progress += dt / phase.duration
 
@@ -62,15 +76,26 @@ struct MeditationView: View {
                 countdown = Int(phase.duration)
                 phaseTrigger += 1
             }
+
+            if phase == .inhale {
+                cycleCount += 1
+                cycleTrigger += 1
+                if cycleCount >= totalCycles {
+                    isRunning = false
+                    return
+                }
+            }
         }
 
         switch phase {
         case .inhale:
-            breathScale = 0.85 + 0.30 * CGFloat(progress)
+            let eased = (1.0 - cos(CGFloat(progress) * .pi)) / 2.0
+            breathScale = 0.65 + 0.65 * eased
         case .hold:
-            breathScale = 1.15
+            breathScale = 1.30
         case .exhale:
-            breathScale = 1.15 - 0.30 * CGFloat(progress)
+            let eased = (1.0 - cos(CGFloat(progress) * .pi)) / 2.0
+            breathScale = 1.30 - 0.65 * eased
         }
     }
 }
@@ -135,53 +160,66 @@ struct AuroraBackground: View {
 struct LotusFlower: View {
     let t: TimeInterval
     var breathScale: CGFloat = 1.0
+    var phase: BreathPhase = .inhale
 
     private let petalTop    = Color.white
     private let petalMid    = Color(white: 0.75)
     private let petalBase   = Color(white: 0.45)
     private let petalShadow = Color(white: 0.20)
 
+    private var breathProgress: CGFloat {
+        ((breathScale - 0.65) / 0.65).clamped(to: 0...1)
+    }
+
     var body: some View {
         GeometryReader { geo in
             let s = min(geo.size.width, geo.size.height)
-            // Slow rotation: 60 seconds per revolution
-            let rotation = t * 6.0
+            let bp = breathProgress
+
+            // One slow, constant rotation — 120 seconds per revolution
+            let rotation = t * 3.0
 
             ZStack {
-                // Layer 1 — outermost ring (largest, most petals)
                 petalRing(count: 16, length: s * 0.48, width: s * 0.16,
                           rotation: rotation, angleOffset: 0,
                           shimmerSpeed: 0.9, shimmerPhase: 0.0,
                           tipBrightness: 1.00)
+                    .scaleEffect(layerScale(depth: 0, bp: bp))
 
-                // Layer 2 — staggered between outer petals
                 petalRing(count: 16, length: s * 0.42, width: s * 0.15,
                           rotation: rotation, angleOffset: 11.25,
                           shimmerSpeed: 1.1, shimmerPhase: 0.4,
                           tipBrightness: 1.00)
+                    .scaleEffect(layerScale(depth: 1, bp: bp))
 
-                // Layer 3
                 petalRing(count: 14, length: s * 0.34, width: s * 0.14,
                           rotation: rotation, angleOffset: 6,
                           shimmerSpeed: 1.25, shimmerPhase: 0.9,
                           tipBrightness: 0.98)
+                    .scaleEffect(layerScale(depth: 2, bp: bp))
 
-                // Layer 4
                 petalRing(count: 12, length: s * 0.27, width: s * 0.13,
                           rotation: -rotation * 0.4, angleOffset: 0,
                           shimmerSpeed: 1.4, shimmerPhase: 1.3,
                           tipBrightness: 0.96)
+                    .scaleEffect(layerScale(depth: 3, bp: bp))
 
-                // Layer 5 — innermost ring of small petals around the orb
                 petalRing(count: 10, length: s * 0.20, width: s * 0.11,
                           rotation: -rotation * 0.4, angleOffset: 18,
                           shimmerSpeed: 1.6, shimmerPhase: 1.8,
                           tipBrightness: 0.94)
+                    .scaleEffect(layerScale(depth: 4, bp: bp))
             }
-            .scaleEffect(breathScale)
             .frame(width: s, height: s)
             .position(x: geo.size.width / 2, y: geo.size.height / 2)
         }
+    }
+
+    private func layerScale(depth: Int, bp: CGFloat) -> CGFloat {
+        let stagger = CGFloat(depth) * 0.06
+        let delayed = (bp - stagger).clamped(to: 0...1)
+        let reactivity: CGFloat = 1.0 - CGFloat(depth) * 0.12
+        return 0.65 + 0.70 * delayed * reactivity
     }
 
     @ViewBuilder
@@ -218,9 +256,9 @@ struct LotusFlower: View {
                         .stroke(Color.white.opacity(0.20), lineWidth: 0.5)
                 )
                 .frame(width: width, height: length)
-                .offset(y: -length / 2)          // base sits at center
-                .rotationEffect(.degrees(angle)) // pivots around (0,0)
-                .opacity(shimmer)
+                .offset(y: -length / 2)
+                .rotationEffect(.degrees(angle))
+                .opacity(shimmer.clamped(to: 0...1))
                 .shadow(color: petalShadow.opacity(0.15), radius: 3, x: 0, y: 1)
         }
     }
@@ -273,7 +311,7 @@ struct GlowingOrb: View {
     var countdown: Int = 4
 
     var body: some View {
-        let intensity = CGFloat((breathScale - 0.85) / 0.30).clamped(to: 0...1)
+        let intensity = CGFloat((breathScale - 0.65) / 0.65).clamped(to: 0...1)
         let orbIntensity = 0.70 + 0.30 * intensity
         let orbScale = 0.82 + 0.32 * intensity
 
