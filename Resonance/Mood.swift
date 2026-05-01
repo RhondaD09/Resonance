@@ -1,7 +1,7 @@
 import SwiftUI
 
 // MARK: - Calm Emoji View
-
+#if false
 struct CalmEmoji: View {
     var mood: Mood
 
@@ -16,9 +16,10 @@ struct CalmEmoji: View {
                 )
                 .blur(radius: 25)
 
-            Text(mood == .joyful ? "🥰" : "☺️")
+            Text(mood == .peaceful ? "🥰" : "☺️")
                 .font(.system(size: 64))
         }
         .frame(width: 140, height: 140)
     }
 }
+#endif 

@@ -121,76 +121,76 @@ struct ForumPost: Identifiable {
 // Mood
 
 enum Mood: String, CaseIterable {
-    case joyful      = "Joyful"
+//    case joyful      = "Joyful"
     case peaceful    = "Peaceful"
     case neutral     = "Low Energy"
     case overwhelmed = "Overwhelmed"
-    case frustrated  = "Frustrated"
-    case heavy       = "Heavy"
+    case frustrated  = "Scattered"
+//    case heavy       = "Heavy"
 
     var color: Color {
         switch self {
-        case .joyful:     return .rGold
+//        case .joyful:     return .rGold
         case .peaceful:   return .rTeal
         case .neutral:    return .rAccent
         case .overwhelmed: return .rRose
         case .frustrated: return Color(red: 251/255, green: 146/255, blue: 60/255)
-        case .heavy:      return .red
+//        case .heavy:      return .red
         }
     }
 
     var isNegative: Bool {
         switch self {
-        case .overwhelmed, .frustrated, .heavy: return true
+        case .overwhelmed, .frustrated: return true
         default: return false
         }
     }
 
     static var positiveMoods: [Mood] {
-        [.joyful, .peaceful, .neutral]
+        [.peaceful, .neutral]
     }
 
     var tagline: String {
         switch self {
-        case .joyful:     return "Carrying light today"
+//        case .joyful:     return "Carrying light today"
         case .peaceful:   return "Settled and still"
         case .neutral:    return "Just here, that's okay"
         case .overwhelmed: return "A lot on your plate"
         case .frustrated: return "Something's stirring"
-        case .heavy:      return "Carrying weight today"
+//        case .heavy:      return "Carrying weight today"
         }
     }
 
     var breathingLabel: String {
         switch self {
-        case .joyful:      return "Gratitude Breath"
+//        case .joyful:      return "Gratitude Breath"
         case .peaceful:    return "Deepening Breath"
         case .neutral:     return "Grounding Breath"
         case .overwhelmed: return "Release Breath"
         case .frustrated:  return "Reset Breath"
-        case .heavy:       return "Comfort Breath"
+//        case .heavy:       return "Comfort Breath"
         }
     }
 
     var audioMode: Int {
         switch self {
-        case .joyful:     return 1
+//        case .joyful:     return 1
         case .peaceful:   return 0
         case .neutral:    return 0
         case .overwhelmed: return 2
         case .frustrated: return 1
-        case .heavy:      return 2
+//        case .heavy:      return 2
         }
     }
 
     var breathingDescription: String {
         switch self {
-        case .joyful:     return "Box breath · 4-4-4-4 · celebrate"
+//        case .joyful:     return "Box breath · 4-4-4-4 · celebrate"
         case .peaceful:   return "Box breath . 4-4-4-4 · deepen the stillness"
         case .neutral:    return "4-7-8 · ground and center"
         case .overwhelmed: return "4-7-8 · deep release"
         case .frustrated: return "Box breath · 4-7-8. reset and return"
-        case .heavy:      return "4-7-8 · gentle comfort"
+//        case .heavy:      return "4-7-8 · gentle comfort"
         }
     }
 }

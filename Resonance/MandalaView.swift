@@ -76,7 +76,7 @@ struct MandalaView: View {
     }()
 
     // ── Change this to set how many 4-7-8 cycles to run ──
-    private let totalCycles = 5
+    private let totalCycles = 4
 
     @State private var particles: [Particle] = {
         let distances: [CGFloat] = [60, 110, 140, 180]
@@ -105,12 +105,20 @@ struct MandalaView: View {
     var body: some View {
         TimelineView(.animation) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
-            Canvas { context, size in
-                draw(context: context, size: size, t: t)
+
+            ZStack {
+                Color.black.ignoresSafeArea()
+
+                StarsBackground(breathScale: breathScale)
+                    .ignoresSafeArea()
+
+                Canvas { context, size in
+                    draw(context: context, size: size, t: t)
+                }
             }
         }
-        .background(Color.black)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.ignoresSafeArea())
         .sensoryFeedback(.impact(weight: .medium), trigger: phaseTrigger)
         .sensoryFeedback(.impact(weight: .light), trigger: tickTrigger)
         .sensoryFeedback(.impact(weight: .heavy), trigger: cycleTrigger)
@@ -175,8 +183,8 @@ struct MandalaView: View {
             Path(bgRect),
             with: .radialGradient(
                 Gradient(colors: [
-                    Color(red: 0.04, green: 0.14, blue: 0.27),
-                    Color.black
+                    Color(red: 0.04, green: 0.14, blue: 0.27).opacity(0.82),
+                    Color.black.opacity(0.35)
                 ]),
                 center: center,
                 startRadius: 0,
@@ -311,8 +319,5 @@ struct MandalaView: View {
 
 #Preview {
     MandalaView()
-        .frame(width: 360, height: 360)
-        .padding()
-        .background(Color.black)
+        .ignoresSafeArea()
 }
-

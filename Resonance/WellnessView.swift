@@ -10,6 +10,7 @@ import SwiftUI
 struct WellnessView: View {
     @Bindable var state: AppState
     var onChangeMood: (() -> Void)? = nil
+    var onReturnHome: (() -> Void)? = nil
 
     @State private var completionCount                = 0
     @State private var showCompletionPopup            = false
@@ -73,6 +74,10 @@ struct WellnessView: View {
                 onNavigateToMusic: {
                     navigateToMusicViewOnDismiss = true
                     dismissCompletion()
+                },
+                onReturnHome: {
+                    dismissCompletion()
+                    onReturnHome?()
                 }
             )
         }

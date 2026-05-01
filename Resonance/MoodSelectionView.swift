@@ -3,6 +3,17 @@
 //  Resonance
 
 import SwiftUI
+import Combine
+
+// Placeholder Peace Prompts view (replace with your real implementation)
+struct PecePromptsView: View {
+    var body: some View {
+        Text("Peace Prompts")
+            .font(.title)
+            .padding()
+    }
+}
+
 // MARK: - 3D Parallax / Gyroscope (commented out — pending team lead decision)
 //import CoreMotion  // ← needed for gyroscope
 //import Combine     // ← needed for @Published / ObservableObject
@@ -208,19 +219,19 @@ private func drawMoodFace(ctx: GraphicsContext, size: CGSize, mood: Mood) {
     let lw: CGFloat = 2.0
 
     switch mood {
-    case .joyful:
-        for side: CGFloat in [-1, 1] {
-            var p = Path()
-            p.move(to:    CGPoint(x: cx + side * es - ew, y: eyeY))
-            p.addQuadCurve(to: CGPoint(x: cx + side * es + ew, y: eyeY),
-                           control: CGPoint(x: cx + side * es, y: eyeY - ew * 0.9))
-            ctx.stroke(p, with: .color(color), lineWidth: lw)
-        }
-        var m = Path()
-        m.move(to: CGPoint(x: cx - w * 0.30, y: mouthY))
-        m.addQuadCurve(to: CGPoint(x: cx + w * 0.30, y: mouthY),
-                       control: CGPoint(x: cx, y: mouthY + h * 0.15))
-        ctx.stroke(m, with: .color(color), lineWidth: lw)
+//    case .joyful:
+//        for side: CGFloat in [-1, 1] {
+//            var p = Path()
+//            p.move(to:    CGPoint(x: cx + side * es - ew, y: eyeY))
+//            p.addQuadCurve(to: CGPoint(x: cx + side * es + ew, y: eyeY),
+//                           control: CGPoint(x: cx + side * es, y: eyeY - ew * 0.9))
+//            ctx.stroke(p, with: .color(color), lineWidth: lw)
+//        }
+//        var m = Path()
+//        m.move(to: CGPoint(x: cx - w * 0.30, y: mouthY))
+//        m.addQuadCurve(to: CGPoint(x: cx + w * 0.30, y: mouthY),
+//                       control: CGPoint(x: cx, y: mouthY + h * 0.15))
+//        ctx.stroke(m, with: .color(color), lineWidth: lw)
 
     case .peaceful:
         for side: CGFloat in [-1, 1] {
@@ -278,22 +289,22 @@ private func drawMoodFace(ctx: GraphicsContext, size: CGSize, mood: Mood) {
                        control: CGPoint(x: cx, y: mouthY - h * 0.05))
         ctx.stroke(m, with: .color(color), lineWidth: lw)
 
-    case .heavy:
-        for side: CGFloat in [-1, 1] {
-            let r = ew * 0.65
-            ctx.fill(Path(ellipseIn: CGRect(x: cx + side * es - r, y: eyeY - r * 0.8,
-                                            width: r*2, height: r*1.6)),
-                     with: .color(color.opacity(0.5)))
-            var lid = Path()
-            lid.move(to:  CGPoint(x: cx + side * es - r - 1, y: eyeY - r * 0.2))
-            lid.addLine(to: CGPoint(x: cx + side * es + r + 1, y: eyeY - r * 0.2))
-            ctx.stroke(lid, with: .color(color), lineWidth: 1.8)
-        }
-        var m = Path()
-        m.move(to: CGPoint(x: cx - w * 0.18, y: mouthY + h * 0.02))
-        m.addQuadCurve(to: CGPoint(x: cx + w * 0.18, y: mouthY + h * 0.02),
-                       control: CGPoint(x: cx, y: mouthY - h * 0.06))
-        ctx.stroke(m, with: .color(color), lineWidth: lw)
+//    case .heavy:
+//        for side: CGFloat in [-1, 1] {
+//            let r = ew * 0.65
+//            ctx.fill(Path(ellipseIn: CGRect(x: cx + side * es - r, y: eyeY - r * 0.8,
+//                                            width: r*2, height: r*1.6)),
+//                     with: .color(color.opacity(0.5)))
+//            var lid = Path()
+//            lid.move(to:  CGPoint(x: cx + side * es - r - 1, y: eyeY - r * 0.2))
+//            lid.addLine(to: CGPoint(x: cx + side * es + r + 1, y: eyeY - r * 0.2))
+//            ctx.stroke(lid, with: .color(color), lineWidth: 1.8)
+//        }
+//        var m = Path()
+//        m.move(to: CGPoint(x: cx - w * 0.18, y: mouthY + h * 0.02))
+//        m.addQuadCurve(to: CGPoint(x: cx + w * 0.18, y: mouthY + h * 0.02),
+//                       control: CGPoint(x: cx, y: mouthY - h * 0.06))
+//        ctx.stroke(m, with: .color(color), lineWidth: lw)
     }
 }
 
@@ -462,6 +473,34 @@ private struct MoodCarousel: View {
     }
 }
 
+// Ripple Effect
+
+private struct RippleEffect: View {
+    let color: Color
+    @State private var animate = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(color.opacity(0.6), lineWidth: 2)
+                .frame(width: animate ? 240 : 20, height: animate ? 240 : 20)
+                .opacity(animate ? 0 : 1)
+            Circle()
+                .stroke(color.opacity(0.45), lineWidth: 2)
+                .frame(width: animate ? 320 : 20, height: animate ? 320 : 20)
+                .opacity(animate ? 0 : 1)
+            Circle()
+                .stroke(color.opacity(0.30), lineWidth: 2)
+                .frame(width: animate ? 400 : 20, height: animate ? 400 : 20)
+                .opacity(animate ? 0 : 1)
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.7)) { animate = true }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
 //Balloon Pop Burst
 
 private struct BalloonPopBurst: View {
@@ -522,120 +561,162 @@ struct MoodSelectionView: View {
 
     private enum SelectionPhase {
         case choosing       // First carousel — "What is your peace?"
-        case popping        // Pop animation playing
+        case popping        // Ripple animation playing
         case desiredMood    // Second carousel — "What do you want to feel?"
     }
+    
+    private enum Destination: Hashable {
+        case flowerMandala
+        case mandala
+        case peacePrompts
+    }
+    
+    @State private var path: [Destination] = []
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 45/255, green: 20/255, blue: 80/255),
-                    Color(red: 25/255, green: 10/255, blue: 50/255),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-
-            StarsBackground()
+        NavigationStack(path: $path) {
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color(red: 45/255, green: 20/255, blue: 80/255),
+                        Color(red: 25/255, green: 10/255, blue: 50/255),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
                 .ignoresSafeArea()
 
-            ambientOrbs
-                .opacity(0.5)
+                StarsBackground()
+                    .ignoresSafeArea()
 
-            switch phase {
-            case .choosing:
-                VStack(spacing: 0) {
-                    VStack(spacing: 15) {
-                        Text("What is Your")
-                            .font(.custom("Georgia", size: 28))
-                            .foregroundStyle(Color.rText)
-                        Text("PEACE?")
-                            .font(.custom("Georgia", size: 28))
-                            .foregroundStyle(Color.rAccent)
-                    }
-                    .opacity(titleOpacity)
-                    .padding(.top, 60)
+                ambientOrbs
+                    .opacity(0.5)
 
-                    Spacer()
+                switch phase {
+                case .choosing:
+                    VStack(spacing: 0) {
+                        VStack(spacing: 15) {
+                            Text("What is Your")
+                                .font(.custom("Georgia", size: 28))
+                                .foregroundStyle(Color.rText)
+                            Text("PEACE?")
+                                .font(.custom("Georgia", size: 28))
+                                .foregroundStyle(Color.rAccent)
+                        }
+                        .opacity(titleOpacity)
+                        .padding(.top, 60)
 
-                    MoodCarousel(
-                        moods: moods,
-                        selectedIndex: $selectedIndex
-                    ) { mood in
-                        handleMoodSelected(mood)
-                    }
-                    .opacity(carouselOpacity)
+                        Spacer()
 
-                    FloatingYogaPose()
+                        MoodCarousel(
+                            moods: moods,
+                            selectedIndex: $selectedIndex
+                        ) { mood in
+                            handleMoodSelected(mood)
+                        }
                         .opacity(carouselOpacity)
-                        .padding(.top, 20)
 
-                    Spacer()
-                }
-                .transition(.opacity)
+                        FloatingYogaPose()
+                            .opacity(carouselOpacity)
+                            .padding(.top, 20)
 
-            case .popping:
-                BalloonPopBurst(color: popColor)
+                        Spacer()
+                    }
                     .transition(.opacity)
 
-            case .desiredMood:
-                VStack(spacing: 0) {
-                    VStack(spacing: 15) {
-                        Text("What do you")
-                            .font(.custom("Georgia", size: 50))
-                            .foregroundStyle(Color.rText)
-                        Text("want to feel?")
-                            .font(.system(size: 50, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.rAccent)
+                case .popping:
+                    RippleEffect(color: popColor)
+                        .transition(.opacity)
+
+                case .desiredMood:
+                    VStack(spacing: 0) {
+                        VStack(spacing: 15) {
+                            Text("What do you")
+                                .font(.custom("Georgia", size: 50))
+                                .foregroundStyle(Color.rText)
+                            Text("want to feel?")
+                                .font(.system(size: 50, weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.rAccent)
+                        }
+                        .padding(.top, 60)
+
+                        Spacer()
+
+                        MoodCarousel(
+                            moods: positiveMoods,
+                            selectedIndex: $desiredIndex
+                        ) { mood in
+                            onContinue(mood)
+                        }
+
+                        FloatingYogaPose()
+                            .padding(.top, 20)
+
+                        Spacer()
                     }
-                    .padding(.top, 60)
-
-                    Spacer()
-
-                    MoodCarousel(
-                        moods: positiveMoods,
-                        selectedIndex: $desiredIndex
-                    ) { mood in
-                        onContinue(mood)
-                    }
-
-                    FloatingYogaPose()
-                        .padding(.top, 20)
-
-                    Spacer()
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
-                .transition(.move(edge: .trailing).combined(with: .opacity))
             }
-        }
-        .sensoryFeedback(.impact(weight: .heavy), trigger: popTrigger)
-        .preferredColorScheme(.dark)
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.8).delay(0.3)) { titleOpacity = 1 }
-            withAnimation(.easeOut(duration: 0.8).delay(0.6)) { carouselOpacity = 1 }
+            .navigationDestination(for: Destination.self) { dest in
+                switch dest {
+                case .flowerMandala:
+                    FlowerMandalaView()
+                        .toolbar(.hidden, for: .navigationBar)
+                case .mandala:
+                    MandalaView()
+                        .onDisappear(perform: { /* no-op here */ })
+                        .toolbar(.hidden, for: .navigationBar)
+                        .onReceive(Just(())) { _ in }
+                        .overlay(
+                            // Provide a completion trigger via PreferenceKey or environment as needed.
+                            // If MandalaView exposes a completion callback, call: path.append(.peacePrompts)
+                            EmptyView()
+                        )
+                case .peacePrompts:
+                    PeacePromptsView {
+                        if !path.isEmpty {
+                            path.removeLast()
+                        }
+                    }
+                }
+            }
+            .sensoryFeedback(.impact(weight: .heavy), trigger: popTrigger)
+            .preferredColorScheme(.dark)
+            .onAppear {
+                withAnimation(.easeOut(duration: 0.8).delay(0.3)) { titleOpacity = 1 }
+                withAnimation(.easeOut(duration: 0.8).delay(0.6)) { carouselOpacity = 1 }
+            }
         }
     }
 
     private func handleMoodSelected(_ mood: Mood) {
-        if mood.isNegative {
-            // Pop the balloon, then show desired mood carousel
-            popColor = mood.color
-            popTrigger += 1
+        // Always show a ripple first
+        popColor = mood.color
+        popTrigger += 1
 
-            withAnimation(.easeOut(duration: 0.3)) {
-                phase = .popping
-            }
+        withAnimation(.easeOut(duration: 0.3)) {
+            phase = .popping
+        }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                desiredIndex = 0
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    phase = .desiredMood
+        // After ripple completes, branch behavior
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+            if mood.isNegative {
+                // Overwhelmed and other negative moods can route specifically
+                if mood == .overwhelmed {
+                    path.append(.mandala)
+                } else {
+                    desiredIndex = 0
+                    withAnimation(.easeInOut(duration: 0.5)) {
+                        phase = .desiredMood
+                    }
+                }
+            } else {
+                if mood == .peaceful {
+                    path.append(.flowerMandala)
+                } else {
+                    onContinue(mood)
                 }
             }
-        } else {
-            // Positive mood — go straight through
-            onContinue(mood)
         }
     }
 

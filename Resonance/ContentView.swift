@@ -67,11 +67,15 @@ struct ContentView: View {
     private var screenContent: some View {
         switch state.selectedTab {
         case .wellness:
-            WellnessView(state: state) {
+            WellnessView(state: state, onChangeMood: {
                 withAnimation(.easeInOut(duration: 0.6)) {
                     screen = .checkin
                 }
-            }
+            }, onReturnHome: {
+                withAnimation(.easeInOut(duration: 0.8)) {
+                    screen = .landing
+                }
+            })
         case .music:
             MusicView(state: state)
         case .connect:

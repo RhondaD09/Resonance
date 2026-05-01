@@ -5,13 +5,7 @@
 //  Created by Rhonda Davis on 4/17/26.
 //
 
-//
-//  BreathCompletionCheckIn.swift
-//  Resonance
-//
-//  Post-breathing check-in screen — dark purple gradient,
-//  bold white title, purple pill buttons.
-//
+
 
 import SwiftUI
 
@@ -20,9 +14,11 @@ struct BreathCompletionCheckIn: View {
     var onNeedMorePeace:   () -> Void
     var onNavigateToConnect: (() -> Void)?
     var onNavigateToMusic: (() -> Void)?
+    var onReturnHome: (() -> Void)?
 
     @State private var appeared         = false
     @State private var showPeacePrompts = false
+    @State private var showPeaceCompletion = false
 
     var body: some View {
         ZStack {
@@ -31,9 +27,22 @@ struct BreathCompletionCheckIn: View {
             AnimatedMeshGradient()
                 .ignoresSafeArea()
 
-            if showPeacePrompts {
-                PeacePromptsView(onDismiss: onFeelingGrounded, onNavigateToConnect: onNavigateToConnect, onNavigateToMusic: onNavigateToMusic)
-                    .transition(.move(edge: .trailing))
+            if showPeaceCompletion {
+                PeaceCompletionView(onReturnHome: {
+                    onReturnHome?()
+                })
+                .transition(.move(edge: .trailing))
+            } else if showPeacePrompts {
+                PeacePromptsView(
+                    onDismiss: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showPeaceCompletion = true
+                        }
+                    },
+                    onNavigateToConnect: onNavigateToConnect,
+                    onNavigateToMusic: onNavigateToMusic
+                )
+                .transition(.move(edge: .trailing))
             } else {
                 VStack(spacing: 0) {
 
@@ -48,8 +57,10 @@ struct BreathCompletionCheckIn: View {
                             .font(.custom("Titan One", size: 42))
                             .foregroundStyle(.white)
                         Text("Now?")
-                            .font(.custom("We Love Peace", size: 48))
+                            .font(.custom("Titan One", size: 56))
                             .foregroundStyle(.white)
+                            .fontWeight(.heavy)
+                            .shadow(color: .white.opacity(0.4), radius: 1, x: 0, y: 0)
                     }
                     .multilineTextAlignment(.center)
                     .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)

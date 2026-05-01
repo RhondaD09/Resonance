@@ -5,17 +5,14 @@
 //  Created by Rhonda Davis on 4/27/26.
 //
 
-//
-//  FlowerMandalaView.swift
-//  Animated eight-petal pink flower — breathing petals, glowing core,
-//  twinkling sparkle particles. Drop into any iOS / macOS project.
-//
+
 //  Use:
 //      FlowerMandalaView()
 //          .frame(width: 360, height: 360)
 //
 
 import SwiftUI
+import Combine
 
 //Models
 
@@ -44,6 +41,9 @@ private struct FlowerMandala: Shape {
 // View
 
 struct FlowerMandalaView: View {
+    private let totalCycles = 4
+    private let restingScale: CGFloat = 0.92
+    private let inhaledScale: CGFloat = 1.12
 
     // Core color palette — pink ramp.
     private let petalOuter   = Color(red: 0.91, green: 0.61, blue: 0.77) // #E89BC4
@@ -80,36 +80,56 @@ struct FlowerMandalaView: View {
         Sparkle(position: CGPoint(x: -110, y:   10), baseRadius: 2.0,  period: 2.4, phase: 0.3),
     ]
 
+    @State private var phase: BreathPhase = .inhale
+    @State private var phaseProgress: Double = 0
+    @State private var cycleCount: Int = 0
+    @State private var isRunning = true
+    @State private var timer = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()
+
+    private var breathScale: CGFloat {
+        guard isRunning else { return restingScale }
+
+        let easedProgress = smoothstep(phaseProgress)
+        switch phase {
+        case .inhale:
+            return restingScale + (inhaledScale - restingScale) * easedProgress
+        case .hold:
+            return inhaledScale
+        case .exhale:
+            return inhaledScale - (inhaledScale - restingScale) * easedProgress
+        }
+    }
+
     var body: some View {
         TimelineView(.animation) { timeline in
             let t = timeline.date.timeIntervalSinceReferenceDate
-            Canvas { context, size in
-                draw(context: context, size: size, t: t)
+
+            ZStack {
+                Color.black.ignoresSafeArea()
+
+                StarsBackground(breathScale: breathScale)
+                    .ignoresSafeArea()
+
+                Canvas { context, size in
+                    draw(context: context, size: size, t: t, breathScale: breathScale)
+                }
             }
         }
-        .background(Color.black)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.ignoresSafeArea())
+        .onReceive(timer) { _ in
+            tickBreath()
+        }
     }
 
     //Drawing
 
-    private func draw(context ctx: GraphicsContext, size: CGSize, t: TimeInterval) {
+    private func draw(context ctx: GraphicsContext, size: CGSize, t: TimeInterval, breathScale: CGFloat) {
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
 
         // Authored at 680x680 — scale uniformly to fit.
         let designSize: CGFloat = 680
         let scale = min(size.width, size.height) / designSize
-
-        // 1) Background vignette
-        ctx.fill(
-            Path(CGRect(origin: .zero, size: size)),
-            with: .radialGradient(
-                Gradient(colors: [bgInner, .black]),
-                center: center,
-                startRadius: 0,
-                endRadius: designSize * 0.55 * scale
-            )
-        )
 
         // Centered, scaled coordinate space
         var c = ctx
@@ -125,9 +145,8 @@ struct FlowerMandalaView: View {
             color: petalOuter,
             lineWidth: 2.4,
             opacity: 1.0,
-            spinSpeed: (2 * .pi) / 50,        // ~50s per revolution
-            breathPeriod: 6,
-            breathPhase: 0
+            spinSpeed: (2 * .pi) / 50,
+            breathScale: breathScale
         )
 
         // 3) Inner ring of 8 smaller petals — opposite rotation, offset 22.5°
@@ -139,13 +158,12 @@ struct FlowerMandalaView: View {
             color: petalInner,
             lineWidth: 1.8,
             opacity: 0.75,
-            spinSpeed: -(2 * .pi) / 70,       // 70s per revolution, opposite direction
-            breathPeriod: 7,
-            breathPhase: 0.6
+            spinSpeed: -(2 * .pi) / 70,
+            breathScale: breathScale * 0.98
         )
 
         // 4) Glowing core — three layered radial gradients pulsing
-        drawCore(in: c, t: t)
+        drawCore(in: c, t: t, breathScale: breathScale)
 
         // 5) Inner sparkles — orbit clockwise
         let innerSpin = t * (2 * .pi) / 25
@@ -166,14 +184,11 @@ struct FlowerMandalaView: View {
         lineWidth: CGFloat,
         opacity: Double,
         spinSpeed: Double,           // radians per second
-        breathPeriod: Double,        // seconds
-        breathPhase: Double
+        breathScale: CGFloat
     ) {
         var c = ctx
         c.rotate(by: .radians(t * spinSpeed))
-
-        let breath = 1 + sin(t * (2 * .pi) / breathPeriod + breathPhase) * 0.05
-        c.scaleBy(x: breath * s, y: breath * s)
+        c.scaleBy(x: breathScale * s, y: breathScale * s)
         c.opacity = opacity
 
         let petal = FlowerMandala().path(in: .zero)
@@ -187,7 +202,7 @@ struct FlowerMandalaView: View {
         }
     }
 
-    private func drawCore(in ctx: GraphicsContext, t: TimeInterval) {
+    private func drawCore(in ctx: GraphicsContext, t: TimeInterval, breathScale: CGFloat) {
         let pulses: [(radius: CGFloat, period: Double, baseOpacity: Double)] = [
             (95, 4.0, 0.7),
             (55, 3.0, 0.8),
@@ -197,7 +212,7 @@ struct FlowerMandalaView: View {
         for (i, p) in pulses.enumerated() {
             let pulse = 1 + sin(t * (2 * .pi) / p.period) * 0.15
             let intensity = p.baseOpacity + sin(t * (2 * .pi) / p.period) * 0.15
-            let r = p.radius * CGFloat(pulse)
+            let r = p.radius * CGFloat(pulse) * breathScale
             let rect = CGRect(x: -r, y: -r, width: r * 2, height: r * 2)
 
             if i < 2 {
@@ -271,14 +286,39 @@ struct FlowerMandalaView: View {
             )
         }
     }
+
+    private func tickBreath() {
+        guard isRunning else { return }
+
+        let dt = 1.0 / 60.0
+        phaseProgress += dt / phase.duration
+
+        if phaseProgress >= 1.0 {
+            phaseProgress = 0
+            let nextPhase = (phase.rawValue + 1) % BreathPhase.allCases.count
+            phase = BreathPhase(rawValue: nextPhase) ?? .inhale
+
+            if phase == .inhale {
+                cycleCount += 1
+                if cycleCount >= totalCycles {
+                    isRunning = false
+                    phase = .exhale
+                    phaseProgress = 1
+                }
+            }
+        }
+    }
+
+    private func smoothstep(_ x: Double) -> CGFloat {
+        let t = max(0, min(1, x))
+        return CGFloat(t * t * (3 - 2 * t))
+    }
 }
+
 
 
 
 #Preview {
     FlowerMandalaView()
-        .frame(width: 500, height: 500)
-        .padding()
-        .background(Color.black)
+        .ignoresSafeArea()
 }
-

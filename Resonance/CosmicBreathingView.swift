@@ -134,7 +134,7 @@ struct CosmicBreathingView: View {
     @State private var cycleTrigger: Int = 0
     @State private var buttonTrigger: Int = 0
 
-    
+
     private var orbGlowIntensity: Double {
         if isRunning {
             let normalized = (breathScale - 0.85) / 0.30
@@ -161,11 +161,21 @@ struct CosmicBreathingView: View {
 
                 Spacer()
 
-                // Spiral + glowing orb
+                // Spiral + lotus + glowing orb
                 ZStack {
                     AnimatedSpiralBackground(breathScale: breathScale)
                         .frame(width: 390, height: 390)
                         .clipShape(Circle())
+
+                    // Cosmic mandala — meditative focal point.
+                    // Sacred-geometry rings sit above the spiral but beneath
+                    // the orb glow so the orb burns at the mandala's heart.
+//                    CosmicMandala(
+//                        breathScale: breathScale,
+//                        glowIntensity: orbGlowIntensity
+//                    )
+//                    .frame(width: 360, height: 360)
+//                    .allowsHitTesting(false)
 
                     // Wide ambient halo — big soft throb
                     Circle()
@@ -332,7 +342,7 @@ struct CosmicBreathingView: View {
             if phase == .inhale {
                 cycleCount += 1
                 cycleTrigger += 1
-                if cycleCount >= 5 {
+                if cycleCount >= 4 {
                     isRunning = false
                     withAnimation(.easeOut(duration: 0.5)) {
                         breathScale = 1.0
@@ -355,6 +365,186 @@ struct CosmicBreathingView: View {
     }
 }
 
+
+// MARK: - Cosmic Mandala
+//
+// A sacred-geometry focal point: concentric rings of triangles, dots,
+// diamonds, and star polygons that slowly counter-rotate around the
+// orb. Crisp geometric edges (rather than blurred glow) give the
+// mandala a clear, contemplative presence against the spiral and orb.
+// The whole figure scales gently with `breathScale` and brightens
+// with `glowIntensity`, so it breathes alongside the orb.
+
+struct CosmicMandala: View {
+    let breathScale: CGFloat
+    let glowIntensity: Double
+
+    // Violet palette tuned to the existing cosmic theme
+    private let bright  = Color(red: 0.92, green: 0.88, blue: 1.00)
+    private let primary = Color(red: 0.65, green: 0.50, blue: 1.00)
+    private let accent  = Color(red: 0.85, green: 0.55, blue: 1.00)
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { ctx in
+            let t = ctx.date.timeIntervalSinceReferenceDate
+            let slow = t * 2.5  // ~144s/revolution — meditative pace
+
+            GeometryReader { geo in
+                let s = min(geo.size.width, geo.size.height)
+
+                ZStack {
+                    // Outermost guide circle — single thin boundary
+                    Circle()
+                        .stroke(primary.opacity(0.30 * glowIntensity), lineWidth: 1.0)
+                        .frame(width: s * 0.94, height: s * 0.94)
+
+                    // Outer flower-of-life ring — 24 overlapping circles
+                    flowerOfLifeRing(count: 24,
+                                     ringRadius: s * 0.42,
+                                     overlap: 1.18,
+                                     rotation: slow * 0.4,
+                                     color: bright,
+                                     opacity: 0.50,
+                                     lineWidth: 0.9)
+
+                    // 8-pointed star (octagram) — outer sacred polygon
+                    StarPolygon(points: 8, innerRatio: 0.5)
+                        .stroke(accent.opacity(0.55 * glowIntensity), lineWidth: 1.2)
+                        .frame(width: s * 0.74, height: s * 0.74)
+                        .rotationEffect(.degrees(-slow * 0.7))
+
+                    // Middle flower-of-life ring — 18 circles, counter-rotating
+                    flowerOfLifeRing(count: 18,
+                                     ringRadius: s * 0.30,
+                                     overlap: 1.20,
+                                     rotation: -slow * 0.6,
+                                     color: primary,
+                                     opacity: 0.55,
+                                     lineWidth: 0.9)
+
+                    // 6-pointed star (hexagram) — inner sacred polygon
+                    StarPolygon(points: 6, innerRatio: 0.58)
+                        .stroke(bright.opacity(0.70 * glowIntensity), lineWidth: 1.0)
+                        .frame(width: s * 0.42, height: s * 0.42)
+                        .rotationEffect(.degrees(slow * 1.5))
+
+                    // Tiny dot ring weaving between the larger elements
+                    dotRing(count: 24,
+                            radius: s * 0.36,
+                            size: s * 0.008,
+                            rotation: -slow * 0.5,
+                            color: bright,
+                            opacity: 0.9)
+
+                    // Inner flower-of-life ring — 12 circles
+                    flowerOfLifeRing(count: 12,
+                                     ringRadius: s * 0.18,
+                                     overlap: 1.22,
+                                     rotation: slow * 0.9,
+                                     color: accent,
+                                     opacity: 0.60,
+                                     lineWidth: 0.9)
+
+                    // Seed of Life at the heart — 1 center + 6 around
+                    seedOfLife(unit: s * 0.045,
+                               color: bright,
+                               opacity: 0.75,
+                               lineWidth: 0.9)
+                }
+                .frame(width: s, height: s)
+                .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                .scaleEffect(breathScale) // breathes with the user
+                .shadow(color: primary.opacity(0.35 * glowIntensity), radius: 6)
+            }
+        }
+    }
+
+    // Building blocks
+
+    /// A ring of `count` overlapping circles around the center.
+    /// Adjacent circles intersect to form vesica-piscis petals — the
+    /// foundation of flower-of-life sacred geometry.
+    @ViewBuilder
+    private func flowerOfLifeRing(count: Int, ringRadius: CGFloat,
+                                  overlap: CGFloat, rotation: Double,
+                                  color: Color, opacity: Double,
+                                  lineWidth: CGFloat) -> some View {
+        // Small-circle radius so adjacent circles touch (overlap = 1) or
+        // overlap (overlap > 1).
+        let r = ringRadius * CGFloat(sin(.pi / Double(count))) * overlap
+
+        ForEach(0..<count, id: \.self) { i in
+            let angle = Double(i) * 360.0 / Double(count) + rotation
+            Circle()
+                .stroke(color.opacity(opacity * glowIntensity), lineWidth: lineWidth)
+                .frame(width: r * 2, height: r * 2)
+                .offset(y: -ringRadius)
+                .rotationEffect(.degrees(angle))
+        }
+    }
+
+    /// Classic Seed of Life — 1 center circle + 6 around, all the same
+    /// radius, surrounding circles centered exactly one radius from the
+    /// origin so they overlap the center one perfectly.
+    @ViewBuilder
+    private func seedOfLife(unit: CGFloat, color: Color,
+                            opacity: Double, lineWidth: CGFloat) -> some View {
+        Circle()
+            .stroke(color.opacity(opacity * glowIntensity), lineWidth: lineWidth)
+            .frame(width: unit * 2, height: unit * 2)
+
+        ForEach(0..<6, id: \.self) { i in
+            Circle()
+                .stroke(color.opacity(opacity * glowIntensity), lineWidth: lineWidth)
+                .frame(width: unit * 2, height: unit * 2)
+                .offset(y: -unit)
+                .rotationEffect(.degrees(Double(i) * 60.0))
+        }
+    }
+
+    @ViewBuilder
+    private func dotRing(count: Int, radius: CGFloat, size: CGFloat,
+                         rotation: Double, color: Color, opacity: Double) -> some View {
+        ForEach(0..<count, id: \.self) { i in
+            let angle = Double(i) * 360.0 / Double(count) + rotation
+            Circle()
+                .fill(color.opacity(opacity * glowIntensity))
+                .frame(width: size, height: size)
+                .offset(y: -radius)
+                .rotationEffect(.degrees(angle))
+        }
+    }
+}
+
+// Mandala Shapes
+
+/// A regular star polygon with `points` outer vertices.
+/// `innerRatio` controls how "sharp" the star is (0.5 = classic star).
+struct StarPolygon: Shape {
+    let points: Int
+    let innerRatio: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let outerR = min(rect.width, rect.height) / 2
+        let innerR = outerR * innerRatio
+        let totalVerts = points * 2
+        let step = (.pi * 2) / CGFloat(totalVerts)
+
+        for i in 0..<totalVerts {
+            let r = (i % 2 == 0) ? outerR : innerR
+            let angle = -CGFloat.pi / 2 + CGFloat(i) * step
+            let pt = CGPoint(
+                x: center.x + cos(angle) * r,
+                y: center.y + sin(angle) * r
+            )
+            if i == 0 { path.move(to: pt) } else { path.addLine(to: pt) }
+        }
+        path.closeSubpath()
+        return path
+    }
+}
 
 
 // Stars Background
