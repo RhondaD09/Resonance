@@ -567,7 +567,9 @@ struct MoodSelectionView: View {
     
     private enum Destination: Hashable {
         case flowerMandala
-        case mandala
+        case circleMandala
+        case diamondBreathing
+        case breathingParticles
         case peacePrompts
     }
     
@@ -646,7 +648,7 @@ struct MoodSelectionView: View {
                             moods: positiveMoods,
                             selectedIndex: $desiredIndex
                         ) { mood in
-                            onContinue(mood)
+                            handleMoodSelected(mood)
                         }
 
                         FloatingYogaPose()
@@ -662,8 +664,8 @@ struct MoodSelectionView: View {
                 case .flowerMandala:
                     FlowerMandalaView()
                         .toolbar(.hidden, for: .navigationBar)
-                case .mandala:
-                    MandalaView()
+                case .circleMandala:
+                    CircleMandalaView()
                         .onDisappear(perform: { /* no-op here */ })
                         .toolbar(.hidden, for: .navigationBar)
                         .onReceive(Just(())) { _ in }
@@ -672,6 +674,12 @@ struct MoodSelectionView: View {
                             // If MandalaView exposes a completion callback, call: path.append(.peacePrompts)
                             EmptyView()
                         )
+                case .diamondBreathing:
+                    BreathingDiamondView()
+                        .toolbar(.hidden, for: .navigationBar)
+                case .breathingParticles:
+                    BreathingParticlesView()
+                        .toolbar(.hidden, for: .navigationBar)
                 case .peacePrompts:
                     PeacePromptsView {
                         if !path.isEmpty {
@@ -685,6 +693,13 @@ struct MoodSelectionView: View {
             .onAppear {
                 withAnimation(.easeOut(duration: 0.8).delay(0.3)) { titleOpacity = 1 }
                 withAnimation(.easeOut(duration: 0.8).delay(0.6)) { carouselOpacity = 1 }
+            }
+            .onChange(of: path) { _, newPath in
+                if newPath.isEmpty && phase != .choosing {
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        phase = .choosing
+                    }
+                }
             }
         }
     }
@@ -701,9 +716,10 @@ struct MoodSelectionView: View {
         // After ripple completes, branch behavior
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
             if mood.isNegative {
-                // Overwhelmed and other negative moods can route specifically
                 if mood == .overwhelmed {
-                    path.append(.mandala)
+                    path.append(.circleMandala)
+                } else if mood == .frustrated {
+                    path.append(.diamondBreathing)
                 } else {
                     desiredIndex = 0
                     withAnimation(.easeInOut(duration: 0.5)) {
@@ -713,6 +729,8 @@ struct MoodSelectionView: View {
             } else {
                 if mood == .peaceful {
                     path.append(.flowerMandala)
+                } else if mood == .neutral {
+                    path.append(.breathingParticles)
                 } else {
                     onContinue(mood)
                 }

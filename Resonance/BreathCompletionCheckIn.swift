@@ -74,7 +74,11 @@ struct BreathCompletionCheckIn: View {
                     VStack(spacing: 16) {
 
                         // Feeling Grounded
-                        Button(action: onFeelingGrounded) {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                showPeaceCompletion = true
+                            }
+                        } label: {
                             Text("Feeling Grounded")
                                 .font(.body.bold())
                                 .padding(.horizontal, 24)

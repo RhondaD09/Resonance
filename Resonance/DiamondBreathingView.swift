@@ -40,6 +40,7 @@ struct TriangleShape: Shape {
 
 // main diamond view
 struct BreathingDiamondView: View {
+    @Environment(\.dismiss) private var dismiss
 
     @State private var isAssembled: Bool = false
 
@@ -54,16 +55,19 @@ struct BreathingDiamondView: View {
 
     @State private var breathText: String = "Breathe In"
     @State private var textOpacity: Double = 0.0
+    @State private var cycleCount: Int = 0
+    @State private var navigateToCompletion: Bool = false
+
 
     let diamondColor = Color(red: 0.95, green: 0.45, blue: 0.50)
     let triSize: CGFloat = 88
 
-    let inhaleDuration:  Double = 3.5
-    let imageFadeIn:     Double = 1.8
-    let holdInhale:      Double = 1.2
+    let inhaleDuration:  Double = 4.0
+    let imageFadeIn:     Double = 1.6
+    let holdInhale:      Double = 0.0
     let imageFadeOut:    Double = 1.6
-    let exhaleDuration:  Double = 3.5
-    let holdExhale:      Double = 1.2
+    let exhaleDuration:  Double = 4.0
+    let holdExhale:      Double = 0.0
 
     var pieces: [TrianglePiece] {
         let s = triSize
@@ -95,87 +99,96 @@ struct BreathingDiamondView: View {
     }
 
     var body: some View {
-
         ZStack {
-
-            // background
-            Color.black.ignoresSafeArea()
-            RadialGradient(
-                gradient: Gradient(colors: [
-                    diamondColor.opacity(0.45),
-                    diamondColor.opacity(0.08),
-                    Color.clear
-                ]),
-                center: .center,
-                startRadius: 0,
-                endRadius: 320
-            )
-            .ignoresSafeArea()
-            .opacity(glowOpacity)
-            .scaleEffect(glowScale)
-
-
-            VStack {
-                Spacer()
-
+            if navigateToCompletion {
+                BreathCompletionCheckIn(
+                    onFeelingGrounded: {},
+                    onNeedMorePeace: {},
+                    onReturnHome: { dismiss() }
+                )
+                .transition(.opacity)
+            } else {
                 ZStack {
-                    ZStack {
-                        ForEach(pieces) { piece in TriangleShape(pointsUp: piece.rotation == 0)
-                                .stroke(
-                                    diamondColor,
-                                    style: StrokeStyle(lineWidth: 2.5, lineJoin: .round)
-                                )
-                                .frame(width: piece.size, height: piece.size * 0.866)
-                                .shadow(color: diamondColor.opacity(0.85), radius: 7)
 
-                                .offset(isAssembled ? .zero : piece.scatterOffset)
+                    // background
+                    Color.black.ignoresSafeArea()
+                    StarsBackground()
+                        .ignoresSafeArea()
+                    RadialGradient(
+                        gradient: Gradient(colors: [
+                            diamondColor.opacity(0.45),
+                            diamondColor.opacity(0.08),
+                            Color.clear
+                        ]),
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 320
+                    )
+                    .ignoresSafeArea()
+                    .opacity(glowOpacity)
+                    .scaleEffect(glowScale)
 
-                                .rotationEffect(.degrees(
-                                    isAssembled
-                                        ? piece.rotation
-                                        : piece.rotation + piece.scatterRotation
-                                ))
 
-                                .animation(
-                                    .easeInOut(duration: isAssembled ? inhaleDuration : exhaleDuration)
-                                    .delay(isAssembled
-                                           ? piece.delay * 0.4
-                                           : piece.delay * 0.8),
-                                    value: isAssembled
-                                )
+                    VStack {
+                        Spacer()
+
+                        ZStack {
+                            ZStack {
+                                ForEach(pieces) { piece in TriangleShape(pointsUp: piece.rotation == 0)
+                                        .stroke(
+                                            diamondColor,
+                                            style: StrokeStyle(lineWidth: 2.5, lineJoin: .round)
+                                        )
+                                        .frame(width: piece.size, height: piece.size * 0.866)
+                                        .shadow(color: diamondColor.opacity(0.85), radius: 7)
+
+                                        .offset(isAssembled ? .zero : piece.scatterOffset)
+
+                                        .rotationEffect(.degrees(
+                                            isAssembled
+                                                ? piece.rotation
+                                                : piece.rotation + piece.scatterRotation
+                                        ))
+
+                                        .animation(
+                                            .easeInOut(duration: isAssembled ? inhaleDuration : exhaleDuration)
+                                            .delay(isAssembled
+                                                   ? piece.delay * 0.4
+                                                   : piece.delay * 0.8),
+                                            value: isAssembled
+                                        )
+                                }
+                            }
+                            .opacity(triangleOpacity)
+                            Image("Diamond")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 300, height: 300)
+                                .shadow(color: diamondColor.opacity(0.85), radius: 18)
+                                .shadow(color: diamondColor.opacity(0.40), radius: 42)
+                                .scaleEffect(imageScale)
+                                .opacity(diamondImageOpacity)
                         }
+                        .frame(width: 340, height: 340)
+                        Text(breathText)
+                            .font(.system(size: 20, weight: .ultraLight, design: .rounded))
+                            .foregroundColor(diamondColor.opacity(0.80))
+                            .tracking(6)
+                            .opacity(textOpacity)
+                            .padding(.top, 28)
+
+                        Spacer()
                     }
-                    .opacity(triangleOpacity)
-                    Image("Diamond")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 300, height: 300)
-                        .shadow(color: diamondColor.opacity(0.85), radius: 18)
-                        .shadow(color: diamondColor.opacity(0.40), radius: 42)
-                        .scaleEffect(imageScale)
-                        .opacity(diamondImageOpacity)
                 }
-                .frame(width: 340, height: 340)
-                Text(breathText)
-                    .font(.system(size: 20, weight: .ultraLight, design: .rounded))
-                    .foregroundColor(diamondColor.opacity(0.80))
-                    .tracking(6)
-                    .opacity(textOpacity)
-                    .padding(.top, 28)
-
-                Spacer()
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        startBreathingCycle()
+                    }
+                }
+                .transition(.opacity)
             }
         }
-
-        .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                startBreathingCycle()
-            }
-        }
-
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.black, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar(.hidden, for: .navigationBar)
     }
 
     func startBreathingCycle() {
@@ -200,15 +213,15 @@ struct BreathingDiamondView: View {
             }
         }
 
-        let exhaleStart = inhaleDuration + holdInhale
-        // = 3.5 + 1.2 = 4.7s after cycle start
+        let exhaleStart = inhaleDuration
+        // = 4.0s after cycle start
         DispatchQueue.main.asyncAfter(deadline: .now() + exhaleStart) {
-            withAnimation(.easeInOut(duration: 0.8)) {
+            withAnimation(.easeInOut(duration: 0.4)) {
                 textOpacity = 0.0
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                 breathText = "Breathe Out"
-                withAnimation(.easeInOut(duration: 0.8)) {
+                withAnimation(.easeInOut(duration: 0.4)) {
                     textOpacity = 0.85
                 }
             }
@@ -233,15 +246,25 @@ struct BreathingDiamondView: View {
                 isAssembled = false
             }
         }
-        let cycleLength = exhaleStart + exhaleDuration + holdExhale + 1.2
+        let cycleLength = exhaleStart + exhaleDuration + 1.2
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + cycleLength - 0.8) {
-            withAnimation(.easeInOut(duration: 0.8)) {
-                textOpacity = 0.0
-            }
-        }
         DispatchQueue.main.asyncAfter(deadline: .now() + cycleLength) {
-            startBreathingCycle()
+          
+// Cycle change
+            cycleCount += 1
+            if cycleCount < 6 {
+                startBreathingCycle()
+            } else {
+                withAnimation(.easeInOut(duration: 0.8)) {
+                    textOpacity = 0.0
+                }
+                // Navigate to completion check-in after finishing 6 cycles
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    withAnimation(.easeInOut(duration: 0.6)) {
+                        navigateToCompletion = true
+                    }
+                }
+            }
         }
     }
 }

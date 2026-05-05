@@ -174,7 +174,7 @@ struct MandalaView: View {
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
         let bs = breathScale
 
-        let designSize: CGFloat = 680
+        let designSize: CGFloat = 725
         let scale = min(size.width, size.height) / designSize
 
         // 1) Background vignette
@@ -241,17 +241,17 @@ struct MandalaView: View {
         }
 
         // 6) Orbiting nodes — distances breathe with the mandala
-        for (i, n) in nodes.enumerated() {
-            let angle = n.baseAngle + sin(t * n.speed + Double(i)) * 0.08
-            let dist = (n.distance + CGFloat(sin(t * 0.8 + Double(i)) * 4)) * bs
-            let x = cos(angle) * dist
-            let y = sin(angle) * dist
-            let intensity = 0.7 + sin(t * 1.5 + Double(i) * 0.7) * 0.3
-            drawGlowDot(at: CGPoint(x: x, y: y), size: n.size, intensity: intensity, in: c)
-        }
+//        for (i, n) in nodes.enumerated() {
+//            let angle = n.baseAngle + sin(t * n.speed + Double(i)) * 0.08
+//            let dist = (n.distance + CGFloat(sin(t * 0.8 + Double(i)) * 4)) * bs
+//            let x = cos(angle) * dist
+//            let y = sin(angle) * dist
+//            let intensity = 0.7 + sin(t * 1.5 + Double(i) * 0.7) * 0.3
+//            drawGlowDot(at: CGPoint(x: x, y: y), size: n.size, intensity: intensity, in: c)
+//        }
 
         // 7) Core glow
-        drawGlowDot(at: .zero, size: 14, intensity: 0.95, in: c)
+        drawGlowDot(at: .zero, size: 50, intensity: 0.95, in: c)
     }
 
     private func drawRing(_ ring: Ring, in ctx: GraphicsContext, t: TimeInterval, breathScale bs: CGFloat) {

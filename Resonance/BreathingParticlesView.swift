@@ -159,12 +159,16 @@ struct BreathParticleView: View {
 }
 
 struct BreathingParticlesView: View {
+    @Environment(\.dismiss) private var dismiss
 
     @State private var isInhaling: Bool = true
     @State private var breathText: String = "Breathe In"
     @State private var textOpacity: Double = 0.0
     @State private var backgroundGlow: Double = 0.0
     @State private var glowScale: CGFloat = 0.5
+    @State private var cycleCount: Int = 0
+    @State private var navigateToCompletion: Bool = false
+    let totalCycles = 4
 
     let goldColor = Color(red: 1.0, green: 0.65, blue: 0.0)
 
@@ -174,12 +178,13 @@ struct BreathingParticlesView: View {
     let holdDuration:   Double = 0.8
 
     func makeParticles(in size: CGSize) -> [BreathParticle] {
+        let width = max(size.width, 60)
         var list: [BreathParticle] = []
 
         for _ in 0..<40 {
             list.append(
                 BreathParticle(
-                    xPosition: CGFloat.random(in: 20...(size.width - 20)),
+                    xPosition: CGFloat.random(in: 20...(width - 20)),
 
                     size: CGFloat.random(in: 5...48),
 
@@ -197,60 +202,69 @@ struct BreathingParticlesView: View {
     }
 
     var body: some View {
-        
-//        particles know where to go
-        GeometryReader { geometry in
-
-            let screenSize = geometry.size
-            let particles  = makeParticles(in: screenSize)
-
-            ZStack {
-
-                //background
-                Color.black.ignoresSafeArea()
-
-
-                //warm glow
-                RadialGradient(
-                    gradient: Gradient(colors: [
-                        Color(red: 1.0, green: 0.55, blue: 0.0).opacity(0.22),
-                        Color.clear
-                    ]),
-                    center: .center,
-                    startRadius: 0,
-                    endRadius: 380
+        ZStack {
+            if navigateToCompletion {
+                BreathCompletionCheckIn(
+                    onFeelingGrounded: {},
+                    onNeedMorePeace: {},
+                    onReturnHome: { dismiss() }
                 )
-                .ignoresSafeArea()
-                .opacity(backgroundGlow)
-                .scaleEffect(glowScale)
-                ForEach(particles) { particle in
-                    BreathParticleView(
-                        particle:     particle,
-                        isInhaling:   isInhaling,
-                        screenHeight: screenSize.height,
-                        screenWidth:  screenSize.width
-                    )
+                .transition(.opacity)
+            } else {
+                GeometryReader { geometry in
+
+                    let screenSize = geometry.size
+                    let particles  = makeParticles(in: screenSize)
+
+                    ZStack {
+
+                        //background
+                        Color.black.ignoresSafeArea()
+                        StarsBackground()
+                            .ignoresSafeArea()
+
+                        //warm glow
+                        RadialGradient(
+                            gradient: Gradient(colors: [
+                                Color(red: 1.0, green: 0.55, blue: 0.0).opacity(0.22),
+                                Color.clear
+                            ]),
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 380
+                        )
+                        .ignoresSafeArea()
+                        .opacity(backgroundGlow)
+                        .scaleEffect(glowScale)
+                        ForEach(particles) { particle in
+                            BreathParticleView(
+                                particle:     particle,
+                                isInhaling:   isInhaling,
+                                screenHeight: screenSize.height,
+                                screenWidth:  screenSize.width
+                            )
+                        }
+                        VStack {
+                            Spacer()
+                            Text(breathText)
+                                .font(.system(size: 20, weight: .ultraLight, design: .rounded))
+                                .foregroundColor(Color(red: 1.0, green: 0.75, blue: 0.2))
+                                .tracking(6)
+                                .opacity(textOpacity)
+                                .padding(.bottom, 70)
+                        }
+                    }
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            startBreathingCycle()
+                        }
+                    }
                 }
-                VStack {
-                    Spacer()
-                    Text(breathText)
-                        .font(.system(size: 20, weight: .ultraLight, design: .rounded))
-                        .foregroundColor(Color(red: 1.0, green: 0.75, blue: 0.2))
-                        .tracking(6)
-                        .opacity(textOpacity)
-                        .padding(.bottom, 70)
-                }
-            }
-            .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    startBreathingCycle()
-                }
+                .transition(.opacity)
             }
         }
         .ignoresSafeArea()
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.black, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar(.hidden, for: .navigationBar)
     }
 
     func startBreathingCycle() {
@@ -290,7 +304,16 @@ struct BreathingParticlesView: View {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + cycleLength) {
-            startBreathingCycle()
+            cycleCount += 1
+            if cycleCount < totalCycles {
+                startBreathingCycle()
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    withAnimation(.easeInOut(duration: 0.6)) {
+                        navigateToCompletion = true
+                    }
+                }
+            }
         }
     }
 }

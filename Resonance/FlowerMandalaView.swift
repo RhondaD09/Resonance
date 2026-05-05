@@ -39,10 +39,10 @@ private struct FlowerMandala: Shape {
 }
 
 // View
-
+//Cycles
 struct FlowerMandalaView: View {
     private let totalCycles = 4
-    private let restingScale: CGFloat = 0.92
+    private let restingScale: CGFloat = 0.80
     private let inhaledScale: CGFloat = 1.12
 
     // Core color palette — pink ramp.
@@ -80,10 +80,14 @@ struct FlowerMandalaView: View {
         Sparkle(position: CGPoint(x: -110, y:   10), baseRadius: 2.0,  period: 2.4, phase: 0.3),
     ]
 
+    @Environment(\.dismiss) private var dismiss
+
     @State private var phase: BreathPhase = .inhale
     @State private var phaseProgress: Double = 0
     @State private var cycleCount: Int = 0
     @State private var isRunning = true
+    @State private var showCheckIn = false
+    @State private var showPeacePrompts = false
     @State private var timer = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()
 
     private var breathScale: CGFloat {
@@ -101,18 +105,50 @@ struct FlowerMandalaView: View {
     }
 
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
-
-            ZStack {
-                Color.black.ignoresSafeArea()
-
-                StarsBackground(breathScale: breathScale)
-                    .ignoresSafeArea()
-
-                Canvas { context, size in
-                    draw(context: context, size: size, t: t, breathScale: breathScale)
+        ZStack {
+            if showCheckIn {
+                NavigationStack {
+                    BreathCompletionCheckIn(
+                        onFeelingGrounded: { dismiss() },
+                        onNeedMorePeace: {
+                            showPeacePrompts = true
+                        },
+                        onReturnHome: { dismiss() }
+                    )
+                    .navigationDestination(isPresented: $showPeacePrompts) {
+                        PeacePromptsView(onDismiss: {
+                            dismiss()
+                        })
+                    }
                 }
+                .transition(.opacity)
+            } else {
+                TimelineView(.animation) { timeline in
+                    let t = timeline.date.timeIntervalSinceReferenceDate
+
+                    ZStack {
+                        Color.black.ignoresSafeArea()
+
+                        StarsBackground(breathScale: breathScale)
+                            .ignoresSafeArea()
+
+                        Canvas { context, size in
+                            draw(context: context, size: size, t: t, breathScale: breathScale)
+                        }
+
+                        VStack {
+                            Spacer()
+                            Text(phase.label)
+                                .font(.title.weight(.semibold))
+                                .foregroundStyle(petalOuter)
+                                .shadow(color: petalOuter.opacity(0.6), radius: 8)
+                                .contentTransition(.numericText())
+                                .animation(.easeInOut(duration: 0.4), value: phase)
+                                .padding(.bottom, 80)
+                        }
+                    }
+                }
+                .transition(.opacity)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -128,7 +164,7 @@ struct FlowerMandalaView: View {
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
 
         // Authored at 680x680 — scale uniformly to fit.
-        let designSize: CGFloat = 680
+        let designSize: CGFloat = 450
         let scale = min(size.width, size.height) / designSize
 
         // Centered, scaled coordinate space
@@ -304,6 +340,9 @@ struct FlowerMandalaView: View {
                     isRunning = false
                     phase = .exhale
                     phaseProgress = 1
+                    withAnimation(.easeInOut(duration: 0.6)) {
+                        showCheckIn = true
+                    }
                 }
             }
         }
