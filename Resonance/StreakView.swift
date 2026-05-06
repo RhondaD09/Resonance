@@ -22,46 +22,43 @@ struct StreakView: View {
     ]
 
     var body: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
 
-        VStack(spacing: 18) {
+            VStack(spacing: 18) {
 
-            Text("PEACE MOMENTUM DAY \(streak)")
-                .font(
-                    .system(
-                        size: 30,
-                        weight: .black,
-                        design: .serif
+                Text("PEACE MOMENTUM DAY \(streak)")
+                    .font(
+                        .system(
+                            size: 30,
+                            weight: .black,
+                            design: .serif
+                        )
                     )
-                )
-                .foregroundColor(.black)
+                    .foregroundColor(.white)
 
-            HStack(spacing: 18) {
+                HStack(spacing: 18) {
 
-                // Creates 7 circles
-                ForEach(0..<7, id: \.self) { index in
-
-                    Circle()
-
-                        .fill(
-                            index < streak
-                            ? streakColors[index]
-                            : Color.gray.opacity(0.25)
-                        )
-                        .frame(width: 24, height: 24)
-
-                        .shadow(
-                            color:
-                                index < streak
-                                ? streakColors[index].opacity(0.45)
-                                : .clear,
-                            radius: 6
-                        )
-
-                        .scaleEffect(index < streak ? 1.0 : 0.92)
-                        .animation(
-                            .easeInOut(duration: 0.35),
-                            value: streak
-                        )
+                    // Creates 7 tracker icons
+                    ForEach(0..<7, id: \.self) { index in
+                        Image("PeaceSign")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                            .opacity(index < streak ? 1.0 : 0.28)
+                            .shadow(
+                                color:
+                                    index < streak
+                                    ? streakColors[index].opacity(0.45)
+                                    : .clear,
+                                radius: 6
+                            )
+                            .scaleEffect(index < streak ? 1.0 : 0.92)
+                            .animation(
+                                .easeInOut(duration: 0.35),
+                                value: streak
+                            )
+                    }
                 }
             }
         }
