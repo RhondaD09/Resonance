@@ -16,35 +16,49 @@ struct ContentView: View {
     @State private var screen: AppScreen = .landing
 
     var body: some View {
-        switch screen {
-        case .landing:
-            LandingView {
-                withAnimation(.easeInOut(duration: 0.8)) {
-                    screen = .moodSelection
+        Group {
+            switch screen {
+            case .landing:
+                LandingView {
+                    withAnimation(.easeInOut(duration: 0.8)) {
+                        screen = .moodSelection
+                    }
                 }
-            }
-            .transition(.opacity)
-        case .moodSelection:
-            MoodSelectionView { mood in
-                state.selectedMood = mood
-                withAnimation(.easeInOut(duration: 0.8)) {
-                    state.selectedTab = .wellness
-                    screen = .main
-                }
-            }
-            .transition(.opacity)
-        case .checkin:
-            PostBreathingCheckinView { mood in
-                state.selectedMood = mood
-                state.markDone(.breath)
-                withAnimation(.easeInOut(duration: 0.6)) {
-                    screen = .moodSelection
-                }
-            }
-            .transition(.opacity)
-        case .main:
-            mainApp
                 .transition(.opacity)
+            case .moodSelection:
+                MoodSelectionView { mood in
+                    state.selectedMood = mood
+                    withAnimation(.easeInOut(duration: 0.8)) {
+                        state.selectedTab = .wellness
+                        screen = .main
+                    }
+                }
+                .transition(.opacity)
+            case .checkin:
+                PostBreathingCheckinView { mood in
+                    state.selectedMood = mood
+                    state.markDone(.breath)
+                    withAnimation(.easeInOut(duration: 0.6)) {
+                        screen = .moodSelection
+                    }
+                }
+                .transition(.opacity)
+            case .main:
+                mainApp
+                    .transition(.opacity)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToConnect)) { _ in
+            withAnimation(.easeInOut(duration: 0.6)) {
+                state.selectedTab = .connect
+                screen = .main
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToMusic)) { _ in
+            withAnimation(.easeInOut(duration: 0.6)) {
+                state.selectedTab = .music
+                screen = .main
+            }
         }
     }
 

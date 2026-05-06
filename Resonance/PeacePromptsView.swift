@@ -85,11 +85,11 @@ class SpeechRecognizerManager: ObservableObject {
 
 // Journal Storage
 
-struct JournalEntry: Codable, Identifiable {
-    var id = UUID()
-    let text: String
-    let date: Date
-}
+//struct JournalEntry: Codable, Identifiable {
+//    var id = UUID()
+//    let text: String
+//    let date: Date
+//}
 
 //enum JournalStore {
 //    private static let key = "peaceReflections"
@@ -183,25 +183,28 @@ struct PeacePromptsView: View {
                 .animation(.easeInOut(duration: 4).repeatForever(autoreverses: true), value: orbFloat)
 
             // Small solid orb accent
-            Circle()
-                .fill(midPurple)
-                .frame(width: 28, height: 28)
-                .shadow(color: midPurple.opacity(0.6), radius: 8)
-                .offset(x: 130, y: -300)
+            Image(systemName: "peacesign")
+                .resizable(capInsets: EdgeInsets(top: 1, leading: 1, bottom: 1, trailing: 1))
+                .foregroundColor(midPurple)
+                .frame(width: 100, height: 100)
+                .shadow(color: midPurple.opacity(0.2), radius: 2)
+                .offset(x: -3, y: -305)
                 .opacity(appeared ? 1 : 0)
 
             VStack(spacing: 0) {
                 Spacer()
-                    .frame(height: 100)
+                    .frame(height: 200)
                 
                 // Title
                 VStack(spacing: 4) {
                     Text("Peace")
-                        .font(.custom("We Love Peace", size: 38))
-                        .foregroundStyle(.white.opacity(0.7))
-                    Text("Prompts")
-                        .font(.custom("We Love Peace", size: 38))
+                        .font(.custom("Titan One", size: 38))
                         .foregroundStyle(.white)
+                        .fontWeight(.bold)
+                    Text("Prompts")
+                        .font(.custom("Titan One", size: 38))
+                        .foregroundStyle(.white)
+                        .fontWeight(.bold)
                 }
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : -15)
@@ -214,10 +217,10 @@ struct PeacePromptsView: View {
                     .scaleEffect(appeared ? 1 : 0.9)
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        if isFriendPrompt, let navigate = onNavigateToConnect {
-                            navigate()
-                        } else if isDancePrompt, let navigate = onNavigateToMusic {
-                            navigate()
+                        if isFriendPrompt {
+                            NotificationCenter.default.post(name: .navigateToConnect, object: nil)
+                        } else if isDancePrompt {
+                            NotificationCenter.default.post(name: .navigateToMusic, object: nil)
                         } else {
                             onDismiss()
                         }

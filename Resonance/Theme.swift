@@ -195,6 +195,13 @@ enum Mood: String, CaseIterable {
     }
 }
 
+// Navigation Notifications
+
+extension Notification.Name {
+    static let navigateToConnect = Notification.Name("navigateToConnect")
+    static let navigateToMusic = Notification.Name("navigateToMusic")
+}
+
 // App State
 
 enum WellnessTask: String, CaseIterable {

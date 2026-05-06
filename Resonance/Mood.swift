@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Calm Emoji View
+// Calm Emoji View
 #if false
 struct CalmEmoji: View {
     var mood: Mood
