@@ -9,39 +9,56 @@ import SwiftUI
 
 struct BreathParticle: Identifiable {
     let id = UUID()
-
     let xPosition: CGFloat
-
     let size: CGFloat
-
-    let speed: Double
-
-    let delay: Double
-
+    let travelDuration: Double
     let glowIntensity: Double
-
     let horizontalDrift: CGFloat
-
     let opacity: Double
+    let phase: Double
+    let flowsUp: Bool
 }
 
 struct BreathParticleView: View {
 
     let particle: BreathParticle
-    let isInhaling: Bool
-
     let screenHeight: CGFloat
-    let screenWidth: CGFloat
-    @State private var yPosition: CGFloat = 0
-    @State private var currentOpacity: Double = 0
-    @State private var currentScale: CGFloat = 0.3
+    let currentTime: TimeInterval
 
     let goldColor = Color(red: 1.0, green: 0.65, blue: 0.0)
+
+    private var cycleProgress: Double {
+        let raw = (currentTime / particle.travelDuration) + particle.phase
+        let wrapped = raw.truncatingRemainder(dividingBy: 1.0)
+        return wrapped >= 0 ? wrapped : wrapped + 1.0
+    }
+
+    private var yPosition: CGFloat {
+        let travelDistance = screenHeight + (particle.size * 2.0)
+        let p = CGFloat(cycleProgress)
+        if particle.flowsUp {
+            return screenHeight + particle.size - (p * travelDistance)
+        } else {
+            return -particle.size + (p * travelDistance)
+        }
+    }
+
+    private var xOffset: CGFloat {
+        let phaseOffset = particle.phase * (Double.pi * 2.0)
+        return CGFloat(sin((currentTime * 0.8) + phaseOffset)) * particle.horizontalDrift
+    }
+
+    private var particleScale: CGFloat {
+        let p = CGFloat(cycleProgress)
+        return particle.flowsUp
+            ? (0.92 + (0.16 * (1.0 - p)))
+            : (0.92 + (0.16 * p))
+    }
 
     var body: some View {
 
         ZStack {
-            // uter glow
+            // outer glow
             Circle()
                 .fill(
                     RadialGradient(
@@ -78,83 +95,12 @@ struct BreathParticleView: View {
                         )
                 )
         }
-        .scaleEffect(currentScale)
-
-        .opacity(currentOpacity * particle.opacity)
-
+        .scaleEffect(particleScale)
+        .opacity(particle.opacity)
         .position(
-            x: particle.xPosition + (isInhaling ? particle.horizontalDrift : -particle.horizontalDrift),
+            x: particle.xPosition + xOffset,
             y: yPosition
         )
-        .onChange(of: isInhaling) { _, inhaling in
-            animateParticle(inhaling: inhaling)
-        }
-
-        .onAppear {
-            yPosition = isInhaling
-                ? -particle.size           // start above screen
-                : screenHeight + particle.size  // start below screen
-            animateParticle(inhaling: isInhaling)
-        }
-    }
-
-    func animateParticle(inhaling: Bool) {
-
-        if inhaling {
-            yPosition      = -particle.size - CGFloat.random(in: 0...screenHeight * 0.4)
-            currentOpacity = 0
-            currentScale   = 0.4
-            DispatchQueue.main.asyncAfter(deadline: .now() + particle.delay) {
-                withAnimation(
-                    .easeIn(duration: particle.speed * 0.25)
-                ) {
-                    currentOpacity = 1.0
-                }
-
-                withAnimation(
-                    .easeInOut(duration: particle.speed)
-                ) {
-                    yPosition    = screenHeight + particle.size
-                    currentScale = 1.2
-                }
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + particle.speed * 0.7) {
-                    withAnimation(.easeOut(duration: particle.speed * 0.35)) {
-                        currentOpacity = 0
-                    }
-                }
-            }
-
-        } else {
-            //FLOATING UP
-            
-            yPosition      = screenHeight + particle.size + CGFloat.random(in: 0...screenHeight * 0.4)
-            currentOpacity = 0
-            currentScale   = 1.1
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + particle.delay) {
-                withAnimation(
-                    .easeIn(duration: particle.speed * 0.25)
-                ) {
-                    currentOpacity = 1.0
-                    // Fade in bottom
-                }
-
-                withAnimation(
-                    .easeInOut(duration: particle.speed)
-                ) {
-                    yPosition    = -particle.size
-                    currentScale = 0.3
-                }
-
-                // Fade out top
-                DispatchQueue.main.asyncAfter(deadline: .now() + particle.speed * 0.7) {
-                    withAnimation(.easeOut(duration: particle.speed * 0.35)) {
-                        currentOpacity = 0
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -168,6 +114,7 @@ struct BreathingParticlesView: View {
     @State private var glowScale: CGFloat = 0.5
     @State private var cycleCount: Int = 0
     @State private var navigateToCompletion: Bool = false
+    @State private var particles: [BreathParticle] = []
     let totalCycles = 4
 
     let goldColor = Color(red: 1.0, green: 0.65, blue: 0.0)
@@ -175,26 +122,28 @@ struct BreathingParticlesView: View {
     // Breath timing
     let inhaleDuration: Double = 4.0
     let exhaleDuration: Double = 4.0
-    let holdDuration:   Double = 0.8
-
+    
+// particle scatter on screen
     func makeParticles(in size: CGSize) -> [BreathParticle] {
         let width = max(size.width, 60)
         var list: [BreathParticle] = []
+        let count = 40
 
-        for _ in 0..<40 {
+        for index in 0..<count {
+            
+            let x = CGFloat.random(in: 20...(width - 20))
             list.append(
                 BreathParticle(
-                    xPosition: CGFloat.random(in: 20...(width - 20)),
-
+                    xPosition: x,
                     size: CGFloat.random(in: 5...48),
-
-                    speed: Double.random(in: 3.0...5.5),
-
-                    delay: Double.random(in: 0...3.5),
-
+                    travelDuration: Double.random(in: 6.8...9.2),
                     glowIntensity: Double.random(in: 0.5...1.0),
-                    horizontalDrift: CGFloat.random(in: -18...18),
-                    opacity: Double.random(in: 0.6...1.0)
+                    horizontalDrift: index.isMultiple(of: 2)
+                        ? CGFloat.random(in: 6...20)
+                        : CGFloat.random(in: -20...(-6)),
+                    opacity: Double.random(in: 0.55...0.95),
+                    phase: Double.random(in: 0...1),
+                    flowsUp: index.isMultiple(of: 2)
                 )
             )
         }
@@ -214,7 +163,6 @@ struct BreathingParticlesView: View {
                 GeometryReader { geometry in
 
                     let screenSize = geometry.size
-                    let particles  = makeParticles(in: screenSize)
 
                     ZStack {
 
@@ -236,13 +184,14 @@ struct BreathingParticlesView: View {
                         .ignoresSafeArea()
                         .opacity(backgroundGlow)
                         .scaleEffect(glowScale)
-                        ForEach(particles) { particle in
-                            BreathParticleView(
-                                particle:     particle,
-                                isInhaling:   isInhaling,
-                                screenHeight: screenSize.height,
-                                screenWidth:  screenSize.width
-                            )
+                        TimelineView(.animation) { timeline in
+                            ForEach(particles) { particle in
+                                BreathParticleView(
+                                    particle: particle,
+                                    screenHeight: screenSize.height,
+                                    currentTime: timeline.date.timeIntervalSinceReferenceDate
+                                )
+                            }
                         }
                         VStack {
                             Spacer()
@@ -255,6 +204,9 @@ struct BreathingParticlesView: View {
                         }
                     }
                     .onAppear {
+                        if particles.isEmpty {
+                            particles = makeParticles(in: screenSize)
+                        }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             startBreathingCycle()
                         }
@@ -281,7 +233,8 @@ struct BreathingParticlesView: View {
             glowScale      = 1.3
         }
 
-        let exhaleStart = inhaleDuration + holdDuration
+        // Switch directions immediately after inhale (no hold/pause).
+        let exhaleStart = inhaleDuration
 
         DispatchQueue.main.asyncAfter(deadline: .now() + exhaleStart) {
 
@@ -298,7 +251,7 @@ struct BreathingParticlesView: View {
             }
         }
 
-        let cycleLength = inhaleDuration + holdDuration + exhaleDuration + holdDuration
+        let cycleLength = inhaleDuration + exhaleDuration
         DispatchQueue.main.asyncAfter(deadline: .now() + cycleLength - 0.8) {
             withAnimation(.easeInOut(duration: 0.8)) { textOpacity = 0 }
         }

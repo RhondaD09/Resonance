@@ -9,8 +9,8 @@ import Foundation
 import SwiftUI
 import UIKit
 
-// Note: This is a non-View type; do not create a #Preview for it.
-// Use in-app integration tests or unit tests instead of SwiftUI previews.
+// Note: This is a non-View
+
 final class StreakManager {
     
     static let shared = StreakManager()
