@@ -15,8 +15,7 @@ struct BreathParticle: Identifiable {
     let horizontalDrift: CGFloat
     let opacity: Double
     let phase: Double
-    let phaseStart: CGFloat
-    let phaseSpan: CGFloat
+    let speedVariance: CGFloat
 }
 
 struct BreathParticleView: View {
@@ -30,14 +29,8 @@ struct BreathParticleView: View {
     let goldColor = Color(red: 1.0, green: 0.65, blue: 0.0)
 
     private var localProgress: CGFloat {
-        let span = max(particle.phaseSpan, 0.15)
-        let raw = (phaseProgress - particle.phaseStart) / span
-        return max(0, min(raw, 1))
-    }
-
-    private var isActiveInPhase: Bool {
-        let span = max(particle.phaseSpan, 0.15)
-        return phaseProgress >= particle.phaseStart && phaseProgress <= (particle.phaseStart + span)
+        let shifted = phaseProgress * particle.speedVariance
+        return max(0, min(shifted, 1))
     }
 
     private var yPosition: CGFloat {
@@ -117,7 +110,7 @@ struct BreathParticleView: View {
                 )
         }
         .scaleEffect(particleScale)
-        .opacity(isActiveInPhase ? particle.opacity : 0.0)
+        .opacity(particle.opacity)
         .position(
             x: xPosition,
             y: yPosition
@@ -148,7 +141,7 @@ struct BreathingParticlesView: View {
     func makeParticles(in size: CGSize) -> [BreathParticle] {
         let width = max(size.width, 60)
         var list: [BreathParticle] = []
-        let count = 60
+        let count = 30
         let usableWidth = max(width - 40, 1)
         let spacing = usableWidth / CGFloat(count)
 
@@ -156,10 +149,6 @@ struct BreathingParticlesView: View {
             let baseX = 20 + (CGFloat(index) + 0.5) * spacing
             let jitter = CGFloat.random(in: -(spacing * 0.18)...(spacing * 0.18))
             let x = min(max(baseX + jitter, 20), width - 20)
-            // Allow some particles to already be in-flight at phase start.
-            let start = CGFloat.random(in: -0.22...0.58)
-            let maxSpan = max(0.20, 0.98 - start)
-            let span = CGFloat.random(in: 0.20...maxSpan)
             list.append(
                 BreathParticle(
                     xPosition: x,
@@ -168,8 +157,7 @@ struct BreathingParticlesView: View {
                     horizontalDrift: CGFloat.random(in: 6...20),
                     opacity: Double.random(in: 0.55...0.95),
                     phase: Double.random(in: 0...1),
-                    phaseStart: start,
-                    phaseSpan: span
+                    speedVariance: CGFloat.random(in: 0.82...1.10)
                 )
             )
         }
