@@ -11,48 +11,69 @@ struct BreathParticle: Identifiable {
     let id = UUID()
     let xPosition: CGFloat
     let size: CGFloat
-    let travelDuration: Double
     let glowIntensity: Double
     let horizontalDrift: CGFloat
     let opacity: Double
     let phase: Double
-    let flowsUp: Bool
+    let phaseStart: CGFloat
+    let phaseSpan: CGFloat
 }
 
 struct BreathParticleView: View {
 
     let particle: BreathParticle
+    let screenWidth: CGFloat
     let screenHeight: CGFloat
-    let currentTime: TimeInterval
+    let phaseProgress: CGFloat
+    let isInhaling: Bool
 
     let goldColor = Color(red: 1.0, green: 0.65, blue: 0.0)
 
-    private var cycleProgress: Double {
-        let raw = (currentTime / particle.travelDuration) + particle.phase
-        let wrapped = raw.truncatingRemainder(dividingBy: 1.0)
-        return wrapped >= 0 ? wrapped : wrapped + 1.0
+    private var localProgress: CGFloat {
+        let span = max(particle.phaseSpan, 0.15)
+        let raw = (phaseProgress - particle.phaseStart) / span
+        return max(0, min(raw, 1))
+    }
+
+    private var isActiveInPhase: Bool {
+        let span = max(particle.phaseSpan, 0.15)
+        return phaseProgress >= particle.phaseStart && phaseProgress <= (particle.phaseStart + span)
     }
 
     private var yPosition: CGFloat {
-        let travelDistance = screenHeight + (particle.size * 2.0)
-        let p = CGFloat(cycleProgress)
-        if particle.flowsUp {
-            return screenHeight + particle.size - (p * travelDistance)
+        let p = localProgress
+        let spread = screenHeight * 0.34
+        let laneOffset = (CGFloat(particle.phase) - 0.5) * spread
+        let exitMargin = (spread * 0.6) + particle.size
+
+        if isInhaling {
+            let startY = -exitMargin + laneOffset
+            let endY = screenHeight + exitMargin + laneOffset
+            return startY + (p * (endY - startY))
         } else {
-            return -particle.size + (p * travelDistance)
+            let startY = screenHeight + exitMargin + laneOffset
+            let endY = -exitMargin + laneOffset
+            return startY + (p * (endY - startY))
         }
     }
 
     private var xOffset: CGFloat {
-        let phaseOffset = particle.phase * (Double.pi * 2.0)
-        return CGFloat(sin((currentTime * 0.8) + phaseOffset)) * particle.horizontalDrift
+        let p = localProgress
+        let directionalDrift = ((p * 2.0) - 1.0) * particle.horizontalDrift * 1.35
+        let wave = sin((Double(p) * Double.pi * 3.2) + (particle.phase * Double.pi * 2.0))
+        return directionalDrift + (CGFloat(wave) * particle.horizontalDrift * 0.65)
+    }
+
+    private var xPosition: CGFloat {
+        let margin = particle.size
+        let minX = margin
+        let maxX = max(screenWidth - margin, minX + 1)
+        return min(max(particle.xPosition + xOffset, minX), maxX)
     }
 
     private var particleScale: CGFloat {
-        let p = CGFloat(cycleProgress)
-        return particle.flowsUp
-            ? (0.92 + (0.16 * (1.0 - p)))
-            : (0.92 + (0.16 * p))
+        let p = localProgress
+        return isInhaling ? (0.90 + (0.18 * p)) : (1.08 - (0.18 * p))
     }
 
     var body: some View {
@@ -96,9 +117,9 @@ struct BreathParticleView: View {
                 )
         }
         .scaleEffect(particleScale)
-        .opacity(particle.opacity)
+        .opacity(isActiveInPhase ? particle.opacity : 0.0)
         .position(
-            x: particle.xPosition + xOffset,
+            x: xPosition,
             y: yPosition
         )
     }
@@ -115,35 +136,40 @@ struct BreathingParticlesView: View {
     @State private var cycleCount: Int = 0
     @State private var navigateToCompletion: Bool = false
     @State private var particles: [BreathParticle] = []
+    @State private var phaseProgress: CGFloat = 0.0
     let totalCycles = 4
 
     let goldColor = Color(red: 1.0, green: 0.65, blue: 0.0)
 
     // Breath timing
-    let inhaleDuration: Double = 4.0
-    let exhaleDuration: Double = 4.0
-    
-// particle scatter on screen
+    let inhaleDuration: Double = 8.0
+    let exhaleDuration: Double = 8.0
+
     func makeParticles(in size: CGSize) -> [BreathParticle] {
         let width = max(size.width, 60)
         var list: [BreathParticle] = []
-        let count = 40
+        let count = 60
+        let usableWidth = max(width - 40, 1)
+        let spacing = usableWidth / CGFloat(count)
 
         for index in 0..<count {
-            
-            let x = CGFloat.random(in: 20...(width - 20))
+            let baseX = 20 + (CGFloat(index) + 0.5) * spacing
+            let jitter = CGFloat.random(in: -(spacing * 0.18)...(spacing * 0.18))
+            let x = min(max(baseX + jitter, 20), width - 20)
+            // Allow some particles to already be in-flight at phase start.
+            let start = CGFloat.random(in: -0.22...0.58)
+            let maxSpan = max(0.20, 0.98 - start)
+            let span = CGFloat.random(in: 0.20...maxSpan)
             list.append(
                 BreathParticle(
                     xPosition: x,
-                    size: CGFloat.random(in: 5...48),
-                    travelDuration: Double.random(in: 6.8...9.2),
+                    size: CGFloat.random(in: 5...34),
                     glowIntensity: Double.random(in: 0.5...1.0),
-                    horizontalDrift: index.isMultiple(of: 2)
-                        ? CGFloat.random(in: 6...20)
-                        : CGFloat.random(in: -20...(-6)),
+                    horizontalDrift: CGFloat.random(in: 6...20),
                     opacity: Double.random(in: 0.55...0.95),
                     phase: Double.random(in: 0...1),
-                    flowsUp: index.isMultiple(of: 2)
+                    phaseStart: start,
+                    phaseSpan: span
                 )
             )
         }
@@ -184,14 +210,14 @@ struct BreathingParticlesView: View {
                         .ignoresSafeArea()
                         .opacity(backgroundGlow)
                         .scaleEffect(glowScale)
-                        TimelineView(.animation) { timeline in
-                            ForEach(particles) { particle in
-                                BreathParticleView(
-                                    particle: particle,
-                                    screenHeight: screenSize.height,
-                                    currentTime: timeline.date.timeIntervalSinceReferenceDate
-                                )
-                            }
+                        ForEach(particles) { particle in
+                            BreathParticleView(
+                                particle: particle,
+                                screenWidth: screenSize.width,
+                                screenHeight: screenSize.height,
+                                phaseProgress: phaseProgress,
+                                isInhaling: isInhaling
+                            )
                         }
                         VStack {
                             Spacer()
@@ -208,7 +234,7 @@ struct BreathingParticlesView: View {
                             particles = makeParticles(in: screenSize)
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            startBreathingCycle()
+                            startBreathingCycle(in: screenSize)
                         }
                     }
                 }
@@ -219,13 +245,19 @@ struct BreathingParticlesView: View {
         .toolbar(.hidden, for: .navigationBar)
     }
 
-    func startBreathingCycle() {
+    func startBreathingCycle(in screenSize: CGSize) {
 
         isInhaling = true
-
+        phaseProgress = 0.0
+        // New spawn map at phase start so each pass enters from different places.
+        particles = makeParticles(in: screenSize)
         breathText = "Breathe In"
         withAnimation(.easeInOut(duration: 1.0)) {
             textOpacity = 0.9
+        }
+
+        withAnimation(.linear(duration: inhaleDuration)) {
+            phaseProgress = 1.0
         }
 
         withAnimation(.easeInOut(duration: inhaleDuration)) {
@@ -239,10 +271,17 @@ struct BreathingParticlesView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + exhaleStart) {
 
             isInhaling = false
+            phaseProgress = 0.0
+            // Refresh particle positions while offscreen between phases.
+            particles = makeParticles(in: screenSize)
             withAnimation(.easeInOut(duration: 0.6)) { textOpacity = 0 }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 breathText = "Breathe Out"
                 withAnimation(.easeInOut(duration: 0.6)) { textOpacity = 0.9 }
+            }
+
+            withAnimation(.linear(duration: exhaleDuration)) {
+                phaseProgress = 1.0
             }
 
             withAnimation(.easeInOut(duration: exhaleDuration)) {
@@ -259,7 +298,7 @@ struct BreathingParticlesView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + cycleLength) {
             cycleCount += 1
             if cycleCount < totalCycles {
-                startBreathingCycle()
+                startBreathingCycle(in: screenSize)
             } else {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     withAnimation(.easeInOut(duration: 0.6)) {
