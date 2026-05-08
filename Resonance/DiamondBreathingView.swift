@@ -71,27 +71,33 @@ struct BreathingDiamondView: View {
 
     var pieces: [TrianglePiece] {
         let s = triSize
-        return [
-            // scatter coordinates
-            TrianglePiece(id: 0,  scatterOffset: CGSize(width: -0.85, height: -0.65), rotation: 0,   scatterRotation: -35, size: s, delay: 0.00),
-            TrianglePiece(id: 1,  scatterOffset: CGSize(width: -0.35, height: -0.85), rotation: 0,   scatterRotation:  20, size: s, delay: 0.08),
-            TrianglePiece(id: 2,  scatterOffset: CGSize(width:  0.35, height: -0.82), rotation: 0,   scatterRotation: -20, size: s, delay: 0.16),
-            TrianglePiece(id: 3,  scatterOffset: CGSize(width:  0.85, height: -0.60), rotation: 0,   scatterRotation:  35, size: s, delay: 0.24),
+        let totalPieces = 14
 
-            TrianglePiece(id: 4,  scatterOffset: CGSize(width: -0.75, height: -0.20), rotation: 180, scatterRotation:  45, size: s, delay: 0.06),
-            TrianglePiece(id: 5,  scatterOffset: CGSize(width: -0.25, height: -0.30), rotation: 180, scatterRotation: -30, size: s, delay: 0.13),
-            TrianglePiece(id: 6,  scatterOffset: CGSize(width:  0.25, height: -0.32), rotation: 180, scatterRotation:  40, size: s, delay: 0.20),
+        return (0..<totalPieces).map { index in
 
-            TrianglePiece(id: 7,  scatterOffset: CGSize(width:  0.75, height: -0.15), rotation: 0,   scatterRotation: -50, size: s, delay: 0.30),
-            TrianglePiece(id: 8,  scatterOffset: CGSize(width: -0.80, height:  0.25), rotation: 0,   scatterRotation:  15, size: s, delay: 0.35),
-            TrianglePiece(id: 9,  scatterOffset: CGSize(width: -0.30, height:  0.15), rotation: 0,   scatterRotation:  50, size: s, delay: 0.40),
+            // evenly distribute around a circle
+            let angle = Double(index) / Double(totalPieces) * (.pi * 2)
 
-            TrianglePiece(id: 10, scatterOffset: CGSize(width:  0.30, height:  0.20), rotation: 180, scatterRotation: -60, size: s, delay: 0.32),
-            TrianglePiece(id: 11, scatterOffset: CGSize(width:  0.80, height:  0.30), rotation: 180, scatterRotation:  60, size: s, delay: 0.38),
+            let x = cos(angle) * 0.75
+            let y = sin(angle) * 0.75
 
-            TrianglePiece(id: 12, scatterOffset: CGSize(width: -0.45, height:  0.75), rotation: 180, scatterRotation: -40, size: s, delay: 0.45),
-            TrianglePiece(id: 13, scatterOffset: CGSize(width:  0.45, height:  0.82), rotation: 180, scatterRotation:  40, size: s, delay: 0.50),
-        ]
+            return TrianglePiece(
+                id: index,
+
+                scatterOffset: CGSize(
+                    width: x,
+                    height: y
+                ),
+
+                rotation: index % 2 == 0 ? 0 : 180,
+
+                scatterRotation: index % 2 == 0 ? 18 : -18,
+
+                size: s,
+
+                delay: Double(index) * 0.03
+            )
+        }
     }
 
     var body: some View {
