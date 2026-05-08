@@ -189,7 +189,7 @@ enum Mood: String, CaseIterable {
         case .peaceful:   return "Box breath . 4-7-8 · deepen the stillness"
         case .neutral:    return "4-7-8 · ground and center"
         case .overwhelmed: return "4-7-8 · deep release"
-        case .frustrated: return "Box breath · 4-4. reset and return"
+        case .frustrated: return "Box breath · 5-5. reset and return"
 //        case .heavy:      return "4-7-8 · gentle comfort"
         }
     }

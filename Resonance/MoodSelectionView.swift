@@ -599,10 +599,10 @@ struct MoodSelectionView: View {
                     VStack(spacing: 0) {
                         VStack(spacing: 15) {
                             Text("What is Your")
-                                .font(.custom("Georgia", size: 28))
+                                .font(.custom("Titan One", size: 28))
                                 .foregroundStyle(Color.rText)
                             Text("PEACE?")
-                                .font(.custom("Georgia", size: 28))
+                                .font(.custom("Titan One", size: 28))
                                 .foregroundStyle(Color.rAccent)
                         }
                         .opacity(titleOpacity)

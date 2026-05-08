@@ -22,8 +22,7 @@ struct ConnectView: View {
     @State private var showingAddFriend = false
 
     // Tracks which friend is being edited
-    @State private var editingFriendIndex: Int?
-    @State private var showingEditFriend = false
+    @State private var editingFriend: FriendEditItem?
 
     private let checkinMessages = [
         "👋 Hey, been thinking about you — hope you're doing okay!",
@@ -101,10 +100,8 @@ struct ConnectView: View {
         .sheet(isPresented: $showingFriendPickerForCheckin) {
             checkinFriendPicker
         }
-        .sheet(isPresented: $showingEditFriend) {
-            if let index = editingFriendIndex {
-                FriendFormSheet(state: state, friendIndex: index)
-            }
+        .sheet(item: $editingFriend) { item in
+            FriendFormSheet(state: state, friendIndex: item.id)
         }
         .sensoryFeedback(.impact(weight: .light), trigger: interactionCount)
         .sensoryFeedback(.success, trigger: sentCheckin)
@@ -306,8 +303,7 @@ struct ConnectView: View {
         HStack(spacing: 14) {
             // Avatar circle with emoji — tappable to edit
             Button {
-                editingFriendIndex = index
-                showingEditFriend = true
+                editingFriend = FriendEditItem(id: index)
             } label: {
                 HStack(spacing: 14) {
                     ZStack {
@@ -410,8 +406,7 @@ struct ConnectView: View {
         .shadow(color: shadowColor, radius: 20, y: 10)
         .contextMenu {
             Button {
-                editingFriendIndex = index
-                showingEditFriend = true
+                editingFriend = FriendEditItem(id: index)
             } label: {
                 Label("Edit Friend", systemImage: "pencil")
             }
@@ -985,6 +980,10 @@ private func formatPhoneNumber(_ value: String) -> String {
     }
 
     return result
+}
+
+struct FriendEditItem: Identifiable {
+    let id: Int
 }
 
 #Preview {

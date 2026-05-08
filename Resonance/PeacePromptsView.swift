@@ -134,9 +134,9 @@ struct PeacePromptsView: View {
         "STRETCH FOR A MINUTE",
         "DANCE BREAK!",
 //        "REFLECT",
-        "STAND UP!",
+//        "STAND UP!",
         "CALL A FRIEND YOU'VE MISSED",
-        "RELAX 15 MINS"
+        "DO ABSOLUTELY NOTHING FOR 5 MINUTES"
     ]
 
     private var isFriendPrompt: Bool {

@@ -62,11 +62,11 @@ struct BreathingDiamondView: View {
     let diamondColor = Color(red: 0.95, green: 0.45, blue: 0.50)
     let triSize: CGFloat = 88
 
-    let inhaleDuration:  Double = 4.0
+    let inhaleDuration:  Double = 5.0
     let imageFadeIn:     Double = 1.6
     let holdInhale:      Double = 0.0
     let imageFadeOut:    Double = 1.6
-    let exhaleDuration:  Double = 4.0
+    let exhaleDuration:  Double = 5.0
     let holdExhale:      Double = 0.0
 
     var pieces: [TrianglePiece] {
@@ -136,7 +136,7 @@ struct BreathingDiamondView: View {
                                             diamondColor,
                                             style: StrokeStyle(lineWidth: 2.5, lineJoin: .round)
                                         )
-                                        .frame(width: piece.size, height: piece.size * 0.866)
+                                        .frame(width: piece.size, height: piece.size * 0.760)
                                         .shadow(color: diamondColor.opacity(0.85), radius: 7)
 
                                         .offset(

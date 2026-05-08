@@ -87,12 +87,11 @@ struct FlowerMandalaView: View {
     @State private var cycleCount: Int = 0
     @State private var isRunning = true
     @State private var showCheckIn = false
-    @State private var showPeacePrompts = false
     @State private var timer = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()
 
     private var breathScale: CGFloat {
         guard isRunning else { return restingScale }
-
+        
         let easedProgress = smoothstep(phaseProgress)
         switch phase {
         case .inhale:
@@ -103,24 +102,15 @@ struct FlowerMandalaView: View {
             return inhaledScale - (inhaledScale - restingScale) * easedProgress
         }
     }
-
-    var body: some View {
+      
+        var body: some View {
         ZStack {
             if showCheckIn {
-                NavigationStack {
-                    BreathCompletionCheckIn(
-                        onFeelingGrounded: { dismiss() },
-                        onNeedMorePeace: {
-                            showPeacePrompts = true
-                        },
-                        onReturnHome: { dismiss() }
-                    )
-                    .navigationDestination(isPresented: $showPeacePrompts) {
-                        PeacePromptsView(onDismiss: {
-                            dismiss()
-                        })
-                    }
-                }
+                BreathCompletionCheckIn(
+                    onFeelingGrounded: {},
+                    onNeedMorePeace: {},
+                    onReturnHome: { dismiss() }
+                )
                 .transition(.opacity)
             } else {
                 TimelineView(.animation) { timeline in
@@ -156,6 +146,9 @@ struct FlowerMandalaView: View {
         .onReceive(timer) { _ in
             tickBreath()
         }
+        .sensoryFeedback(.increase, trigger: phase == .inhale && isRunning)
+        .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: phase == .hold && isRunning)
+        .sensoryFeedback(.decrease, trigger: phase == .exhale && isRunning)
     }
 
     //Drawing

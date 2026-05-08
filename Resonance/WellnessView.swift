@@ -16,6 +16,7 @@ struct WellnessView: View {
     @State private var showCompletionPopup            = false
     @State private var navigateToMusicViewOnDismiss   = false
     @State private var navigateToConnectViewOnDismiss = false
+    @State private var navigateToMoodOnDismiss        = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -41,7 +42,7 @@ struct WellnessView: View {
 //            )
 //            .padding(.horizontal, 18)
 
-            CosmicBreathingView(onComplete: {
+            NeonMandalaView(onComplete: {
                 completionCount += 1
                 state.markDone(.breath)
                 withAnimation(.easeInOut(duration: 0.4)) {
@@ -51,7 +52,10 @@ struct WellnessView: View {
         }
         .sensoryFeedback(.success, trigger: completionCount)
         .fullScreenCover(isPresented: $showCompletionPopup, onDismiss: {
-            if navigateToConnectViewOnDismiss {
+            if navigateToMoodOnDismiss {
+                navigateToMoodOnDismiss = false
+                onChangeMood?()
+            } else if navigateToConnectViewOnDismiss {
                 navigateToConnectViewOnDismiss = false
                 state.selectedTab = .connect
             } else if navigateToMusicViewOnDismiss {
@@ -78,6 +82,9 @@ struct WellnessView: View {
                 onReturnHome: {
                     dismissCompletion()
                     onReturnHome?()
+                },
+                onStartOver: {
+                    showCompletionPopup = false
                 }
             )
         }

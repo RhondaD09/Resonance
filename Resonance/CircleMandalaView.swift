@@ -63,6 +63,9 @@ struct CircleMandalaView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
+        .sensoryFeedback(.increase, trigger: phase == .inhale && isRunning)
+        .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: phase == .hold && isRunning)
+        .sensoryFeedback(.decrease, trigger: phase == .exhale && isRunning)
     }
 
     private var breathingContent: some View {

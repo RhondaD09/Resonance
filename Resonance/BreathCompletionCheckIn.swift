@@ -15,10 +15,14 @@ struct BreathCompletionCheckIn: View {
     var onNavigateToConnect: (() -> Void)?
     var onNavigateToMusic: (() -> Void)?
     var onReturnHome: (() -> Void)?
+    var onStartOver: (() -> Void)?
 
-    @State private var appeared         = false
-    @State private var showPeacePrompts = false
-    @State private var showPeaceCompletion = false
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var appeared             = false
+    @State private var showPeacePrompts     = false
+    @State private var showPromptsCheckIn   = false
+    @State private var showPeaceCompletion  = false
 
     var body: some View {
         ZStack {
@@ -32,11 +36,23 @@ struct BreathCompletionCheckIn: View {
                     onReturnHome?()
                 })
                 .transition(.move(edge: .trailing))
+            } else if showPromptsCheckIn {
+                PeacePromptsCheckInView(
+                    onFeelingAtPeace: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showPeaceCompletion = true
+                        }
+                    },
+                    onNeedMorePeace: {
+                        dismiss()
+                    }
+                )
+                .transition(.move(edge: .trailing))
             } else if showPeacePrompts {
                 PeacePromptsView(
                     onDismiss: {
                         withAnimation(.easeInOut(duration: 0.3)) {
-                            showPeaceCompletion = true
+                            showPromptsCheckIn = true
                         }
                     },
                     onNavigateToConnect: onNavigateToConnect,
